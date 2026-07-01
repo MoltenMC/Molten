@@ -5,11 +5,13 @@ import io.github.moltenmc.molten.common.network.ProtocolContext
 import io.github.moltenmc.molten.java.JavaEditionProtocol
 import io.github.moltenmc.molten.java.network.packet.HandshakeNextState
 import io.github.moltenmc.molten.java.network.packet.HandshakePacket
+import io.github.moltenmc.molten.java.network.packet.LoginStartPacket
 import io.github.moltenmc.molten.java.network.registry.JavaPacketRegistries
 import io.github.moltenmc.molten.java.network.session.JavaProtocolStateHolder
 import io.github.moltenmc.molten.java.protocol.JavaProtocolState
 import io.netty5.buffer.BufferAllocator
 import io.netty5.handler.codec.DecoderException
+import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -76,6 +78,32 @@ class JavaPacketDecoderTest {
             assertFailsWith<DecoderException> {
                 decoder.decodePayload(buffer)
             }
+
+            buffer.close()
+        }
+    }
+
+    @Test
+    fun rejectsDecodedPacketThatFailsValidation() {
+        val loginStart = LoginStartPacket(
+            packetId = JavaLoginStartPacketCodec.PACKET_ID,
+            name = "bad-name",
+            playerUuid = UUID.fromString("12345678-1234-5678-9abc-def012345678"),
+        )
+        val payload = JavaLoginStartPacketCodec().encode(loginStart, protocolContext)
+        val decoder = JavaPacketDecoder(
+            registry = JavaPacketRegistries.protocol776(),
+            stateHolder = JavaProtocolStateHolder(JavaProtocolState.LOGIN),
+        )
+
+        BufferAllocator.onHeapUnpooled().use { allocator ->
+            val buffer = allocator.copyOf(payload)
+
+            val error = assertFailsWith<DecoderException> {
+                decoder.decodePayload(buffer)
+            }
+
+            assertEquals("Login username contains invalid characters.", error.message)
 
             buffer.close()
         }
