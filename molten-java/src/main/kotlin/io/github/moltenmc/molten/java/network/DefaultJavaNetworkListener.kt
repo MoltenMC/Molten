@@ -4,6 +4,7 @@ import io.github.moltenmc.molten.java.network.codec.JavaPacketDecoder
 import io.github.moltenmc.molten.java.network.codec.JavaPacketEncoder
 import io.github.moltenmc.molten.java.network.codec.JavaVarIntFrameDecoder
 import io.github.moltenmc.molten.java.network.codec.JavaVarIntFrameEncoder
+import io.github.moltenmc.molten.java.network.handler.JavaConfigurationFinishHandler
 import io.github.moltenmc.molten.java.network.handler.JavaHandshakeStateHandler
 import io.github.moltenmc.molten.java.network.handler.JavaLoginStartHandler
 import io.github.moltenmc.molten.java.network.handler.JavaStatusRequestHandler
@@ -63,6 +64,7 @@ class DefaultJavaNetworkListener(
                                 .addLast("java-handshake-state-handler", JavaHandshakeStateHandler(session))
                                 .addLast("java-status-request-handler", JavaStatusRequestHandler())
                                 .addLast("java-login-start-handler", JavaLoginStartHandler(session))
+                                .addLast("java-configuration-finish-handler", JavaConfigurationFinishHandler(session))
                                 .addLast("java-varint-frame-encoder", JavaVarIntFrameEncoder())
                                 .addLast("java-packet-encoder", JavaPacketEncoder(stateHolder = session))
                         }
