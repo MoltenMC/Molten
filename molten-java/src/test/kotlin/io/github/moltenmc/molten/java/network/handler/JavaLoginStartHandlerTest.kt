@@ -1,6 +1,7 @@
 package io.github.moltenmc.molten.java.network.handler
 
 import io.github.moltenmc.molten.java.JavaEditionProtocol
+import io.github.moltenmc.molten.java.network.packet.FinishConfigurationPacket
 import io.github.moltenmc.molten.java.network.packet.JavaPacket
 import io.github.moltenmc.molten.java.network.packet.LoginStartPacket
 import io.github.moltenmc.molten.java.network.packet.LoginSuccessPacket
@@ -9,6 +10,7 @@ import io.github.moltenmc.molten.java.protocol.JavaProtocolState
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertSame
 
 class JavaLoginStartHandlerTest {
@@ -23,14 +25,18 @@ class JavaLoginStartHandlerTest {
             playerUuid = uuid,
         )
 
+        val result = assertIs<JavaLoginStartHandler.LoginStartResult>(handler.handle(packet))
+
         assertEquals(
             LoginSuccessPacket(
                 packetId = 0x02,
                 uuid = uuid,
                 username = "Player",
             ),
-            handler.handle(packet),
+            result.loginSuccess,
         )
+        assertEquals(1, result.configurationPackets.size)
+        assertEquals(0x03, assertIs<FinishConfigurationPacket>(result.configurationPackets.single()).packetId)
         assertEquals("Player", sessionHolder.profile?.name)
         assertEquals(uuid, sessionHolder.profile?.uuid)
         assertEquals(JavaProtocolState.CONFIGURATION, sessionHolder.state)
