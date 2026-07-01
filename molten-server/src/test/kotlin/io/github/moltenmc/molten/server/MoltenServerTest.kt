@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -284,6 +285,35 @@ class MoltenServerTest {
         assertEquals(1, listener.stopCalls)
     }
 
+    @Test
+    fun rollsBackStartedProtocolListenersWhenStartupFails() {
+        val logger = RecordingLogger()
+        val startedListener = RecordingProtocolListener(ProtocolStack.JAVA_EDITION)
+        val failingListener = RecordingProtocolListener(
+            protocol = ProtocolStack.BEDROCK_EDITION,
+            startFailure = IllegalStateException("bind failed"),
+        )
+        val server = MoltenServer.create(
+            configuration = ServerConfiguration.defaults().copy(tickRate = TickRate(100)),
+            tickPipeline = TickPipeline(emptyList()),
+            logger = logger,
+            protocolListeners = listOf(startedListener, failingListener),
+        )
+
+        assertFailsWith<IllegalStateException> {
+            server.start()
+        }
+
+        assertEquals(LifecycleState.STOPPED, server.state)
+        assertFalse(startedListener.isRunning)
+        assertEquals(1, startedListener.startCalls)
+        assertEquals(1, startedListener.stopCalls)
+        assertEquals(1, failingListener.startCalls)
+        assertEquals(0, failingListener.stopCalls)
+        assertTrue(logger.infoMessages.contains("Protocol listener rolled back: JAVA_EDITION"))
+        assertEquals("Failed to start Molten server", logger.errorMessages.single().first)
+    }
+
     private class LatchTask(
         private val latch: CountDownLatch,
     ) : TickTask {
@@ -307,6 +337,7 @@ class MoltenServerTest {
 
     private class RecordingLogger : ServerLogger {
         val infoMessages = mutableListOf<String>()
+        val errorMessages = mutableListOf<Pair<String, Throwable?>>()
 
         override fun info(message: String) {
             infoMessages += message
@@ -316,11 +347,13 @@ class MoltenServerTest {
         }
 
         override fun error(message: String, cause: Throwable?) {
+            errorMessages += message to cause
         }
     }
 
     private class RecordingProtocolListener(
         override val protocol: ProtocolStack,
+        private val startFailure: RuntimeException? = null,
     ) : ProtocolListener {
         var startCalls: Int = 0
         var stopCalls: Int = 0
@@ -333,6 +366,7 @@ class MoltenServerTest {
 
         override fun start() {
             startCalls++
+            startFailure?.let { throw it }
             isRunning = true
         }
 

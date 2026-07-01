@@ -39,18 +39,27 @@ class MoltenServer(
 
     fun start() {
         if (stateRef.compareAndSet(LifecycleState.CREATED, LifecycleState.STARTING)) {
-            startupSummary.lines().forEach(logger::info)
-            protocolListeners.forEach { listener ->
-                listener.start()
-                logger.info("Protocol listener started: ${listener.protocol} ${listener.boundEndpointLabel()}")
+            val startedListeners = mutableListOf<ProtocolListener>()
+            try {
+                startupSummary.lines().forEach(logger::info)
+                protocolListeners.forEach { listener ->
+                    listener.start()
+                    startedListeners += listener
+                    logger.info("Protocol listener started: ${listener.protocol} ${listener.boundEndpointLabel()}")
+                }
+                if (scheduledTicks) {
+                    tickLoop.startScheduled(configuration.tickRate)
+                } else {
+                    tickLoop.start()
+                }
+                logger.info("Tick loop started")
+                stateRef.set(LifecycleState.RUNNING)
+            } catch (error: Throwable) {
+                logger.error("Failed to start Molten server", error)
+                rollbackProtocolListeners(startedListeners, error)
+                stateRef.set(LifecycleState.STOPPED)
+                throw error
             }
-            if (scheduledTicks) {
-                tickLoop.startScheduled(configuration.tickRate)
-            } else {
-                tickLoop.start()
-            }
-            logger.info("Tick loop started")
-            stateRef.set(LifecycleState.RUNNING)
         }
     }
 
@@ -87,6 +96,21 @@ class MoltenServer(
         protocolListeners.asReversed().forEach { listener ->
             listener.stop()
             logger.info("Protocol listener stopped: ${listener.protocol}")
+        }
+    }
+
+    private fun rollbackProtocolListeners(
+        startedListeners: List<ProtocolListener>,
+        startupFailure: Throwable,
+    ) {
+        startedListeners.asReversed().forEach { listener ->
+            try {
+                listener.stop()
+                logger.info("Protocol listener rolled back: ${listener.protocol}")
+            } catch (rollbackFailure: Throwable) {
+                startupFailure.addSuppressed(rollbackFailure)
+                logger.error("Failed to roll back protocol listener: ${listener.protocol}", rollbackFailure)
+            }
         }
     }
 
