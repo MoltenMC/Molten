@@ -5,5 +5,5 @@ data class HandshakePacket(
     val protocolVersion: Int,
     val serverAddress: String,
     val serverPort: Int,
-    val nextState: Int,
+    val nextState: HandshakeNextState,
 ) : JavaPacket
