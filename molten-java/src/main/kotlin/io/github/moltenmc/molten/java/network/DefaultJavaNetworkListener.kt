@@ -1,6 +1,7 @@
 package io.github.moltenmc.molten.java.network
 
 import io.github.moltenmc.molten.java.network.codec.JavaPacketDecoder
+import io.github.moltenmc.molten.java.network.codec.JavaPacketEncoder
 import io.github.moltenmc.molten.java.network.codec.JavaVarIntFrameDecoder
 import io.github.moltenmc.molten.java.network.codec.JavaVarIntFrameEncoder
 import io.github.moltenmc.molten.java.network.handler.JavaHandshakeStateHandler
@@ -60,6 +61,7 @@ class DefaultJavaNetworkListener(
                                 .addLast("java-packet-decoder", JavaPacketDecoder(stateHolder = protocolState))
                                 .addLast("java-handshake-state-handler", JavaHandshakeStateHandler(protocolState))
                                 .addLast("java-status-request-handler", JavaStatusRequestHandler())
+                                .addLast("java-packet-encoder", JavaPacketEncoder(stateHolder = protocolState))
                                 .addLast("java-varint-frame-encoder", JavaVarIntFrameEncoder())
                         }
                     },
