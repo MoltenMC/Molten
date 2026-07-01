@@ -2,10 +2,12 @@ package io.github.moltenmc.molten.java.network.handler
 
 import io.github.moltenmc.molten.java.network.packet.AcknowledgeFinishConfigurationPacket
 import io.github.moltenmc.molten.java.network.packet.JavaPacket
+import io.github.moltenmc.molten.java.network.packet.JavaPlayJoinPacket
 import io.github.moltenmc.molten.java.network.session.JavaSessionHolder
 import io.github.moltenmc.molten.java.protocol.JavaProtocolState
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertSame
 
 class JavaConfigurationFinishHandlerTest {
@@ -15,7 +17,10 @@ class JavaConfigurationFinishHandlerTest {
         val handler = JavaConfigurationFinishHandler(sessionHolder)
         val packet = AcknowledgeFinishConfigurationPacket(packetId = 0x03)
 
-        assertSame(packet, handler.handle(packet))
+        val result = assertIs<JavaConfigurationFinishHandler.ConfigurationFinishResult>(handler.handle(packet))
+
+        assertEquals(1, result.playPackets.size)
+        assertEquals(0x2b, assertIs<JavaPlayJoinPacket>(result.playPackets.single()).packetId)
         assertEquals(JavaProtocolState.PLAY, sessionHolder.state)
     }
 
