@@ -7,6 +7,7 @@ import io.github.moltenmc.molten.java.network.codec.JavaFinishConfigurationPacke
 import io.github.moltenmc.molten.java.network.codec.JavaHandshakePacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaLoginStartPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaLoginSuccessPacketCodec
+import io.github.moltenmc.molten.java.network.codec.JavaPlayJoinPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaStatusPingPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaStatusPongPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaStatusRequestPacketCodec
@@ -16,6 +17,7 @@ import io.github.moltenmc.molten.java.network.packet.FinishConfigurationPacket
 import io.github.moltenmc.molten.java.network.packet.HandshakePacket
 import io.github.moltenmc.molten.java.network.packet.LoginStartPacket
 import io.github.moltenmc.molten.java.network.packet.LoginSuccessPacket
+import io.github.moltenmc.molten.java.network.packet.JavaPlayJoinPacket
 import io.github.moltenmc.molten.java.network.packet.StatusPingPacket
 import io.github.moltenmc.molten.java.network.packet.StatusPongPacket
 import io.github.moltenmc.molten.java.network.packet.StatusRequestPacket
@@ -112,6 +114,16 @@ object JavaPacketRegistries {
                     codec = JavaAcknowledgeFinishConfigurationPacketCodec(),
                     state = JavaProtocolState.CONFIGURATION,
                     direction = PacketDirection.SERVERBOUND,
+                    frequencyClass = PacketFrequencyClass.LOW,
+                ),
+            )
+            register(
+                JavaPacketRegistryEntry(
+                    packetId = JavaPlayJoinPacketCodec.PACKET_ID,
+                    packetClass = JavaPlayJoinPacket::class,
+                    codec = JavaPlayJoinPacketCodec(),
+                    state = JavaProtocolState.PLAY,
+                    direction = PacketDirection.CLIENTBOUND,
                     frequencyClass = PacketFrequencyClass.LOW,
                 ),
             )
