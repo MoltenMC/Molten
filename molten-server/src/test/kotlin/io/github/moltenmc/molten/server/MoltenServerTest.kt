@@ -22,6 +22,7 @@ import io.github.moltenmc.molten.server.tick.TickTask
 import io.github.moltenmc.molten.server.tick.TickPipeline
 import io.github.moltenmc.molten.server.tick.TickPipelineStep
 import io.github.moltenmc.molten.server.world.WorldStoragePaths
+import java.net.ServerSocket
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
@@ -176,7 +177,10 @@ class MoltenServerTest {
             val paths = WorldStoragePaths(directory)
             val latch = CountDownLatch(1)
             val server = MoltenServer.create(
-                configuration = ServerConfiguration.defaults().copy(tickRate = TickRate(100)),
+                configuration = ServerConfiguration.defaults().copy(
+                    javaPort = freePort(),
+                    tickRate = TickRate(100),
+                ),
                 runtimeDefinition = RuntimeDefinition.forMode(RuntimeMode.JAVA_ONLY),
                 worldStoragePaths = paths,
                 tickTasks = listOf(LatchTask(latch)),
@@ -197,6 +201,7 @@ class MoltenServerTest {
     fun createsServerFromConfigurationRuntimeAndWorldDirectory() {
         withTempDirectory { directory ->
             val configuration = ServerConfiguration.defaults().copy(
+                javaPort = freePort(),
                 tickRate = TickRate(100),
                 runtimeMode = RuntimeMode.JAVA_ONLY,
                 worldDirectory = directory,
@@ -237,7 +242,10 @@ class MoltenServerTest {
         withTempDirectory { directory ->
             val logger = RecordingLogger()
             val server = MoltenServer.create(
-                configuration = ServerConfiguration.defaults().copy(tickRate = TickRate(100)),
+                configuration = ServerConfiguration.defaults().copy(
+                    javaPort = freePort(),
+                    tickRate = TickRate(100),
+                ),
                 runtimeDefinition = RuntimeDefinition.forMode(RuntimeMode.JAVA_ONLY),
                 worldStoragePaths = WorldStoragePaths(directory),
                 logger = logger,
@@ -336,4 +344,7 @@ class MoltenServerTest {
             directory.toFile().deleteRecursively()
         }
     }
+
+    private fun freePort(): Int =
+        ServerSocket(0).use { socket -> socket.localPort }
 }
