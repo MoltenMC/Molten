@@ -5,6 +5,7 @@ import io.github.moltenmc.molten.common.network.PacketFrequencyClass
 import io.github.moltenmc.molten.java.network.codec.JavaAcknowledgeFinishConfigurationPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaFinishConfigurationPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaHandshakePacketCodec
+import io.github.moltenmc.molten.java.network.codec.JavaLoginDisconnectPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaLoginStartPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaLoginSuccessPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaPlayJoinPacketCodec
@@ -18,6 +19,7 @@ import io.github.moltenmc.molten.java.network.packet.HandshakePacket
 import io.github.moltenmc.molten.java.network.packet.LoginStartPacket
 import io.github.moltenmc.molten.java.network.packet.LoginSuccessPacket
 import io.github.moltenmc.molten.java.network.packet.JavaPlayJoinPacket
+import io.github.moltenmc.molten.java.network.packet.LoginDisconnectPacket
 import io.github.moltenmc.molten.java.network.packet.StatusPingPacket
 import io.github.moltenmc.molten.java.network.packet.StatusPongPacket
 import io.github.moltenmc.molten.java.network.packet.StatusRequestPacket
@@ -92,6 +94,16 @@ object JavaPacketRegistries {
                     packetId = JavaLoginSuccessPacketCodec.PACKET_ID,
                     packetClass = LoginSuccessPacket::class,
                     codec = JavaLoginSuccessPacketCodec(),
+                    state = JavaProtocolState.LOGIN,
+                    direction = PacketDirection.CLIENTBOUND,
+                    frequencyClass = PacketFrequencyClass.LOW,
+                ),
+            )
+            register(
+                JavaPacketRegistryEntry(
+                    packetId = JavaLoginDisconnectPacketCodec.PACKET_ID,
+                    packetClass = LoginDisconnectPacket::class,
+                    codec = JavaLoginDisconnectPacketCodec(),
                     state = JavaProtocolState.LOGIN,
                     direction = PacketDirection.CLIENTBOUND,
                     frequencyClass = PacketFrequencyClass.LOW,

@@ -4,6 +4,7 @@ import io.github.moltenmc.molten.common.network.PacketDirection
 import io.github.moltenmc.molten.java.network.codec.JavaAcknowledgeFinishConfigurationPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaFinishConfigurationPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaHandshakePacketCodec
+import io.github.moltenmc.molten.java.network.codec.JavaLoginDisconnectPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaLoginStartPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaLoginSuccessPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaPlayJoinPacketCodec
@@ -17,6 +18,7 @@ import io.github.moltenmc.molten.java.network.packet.HandshakePacket
 import io.github.moltenmc.molten.java.network.packet.LoginStartPacket
 import io.github.moltenmc.molten.java.network.packet.LoginSuccessPacket
 import io.github.moltenmc.molten.java.network.packet.JavaPlayJoinPacket
+import io.github.moltenmc.molten.java.network.packet.LoginDisconnectPacket
 import io.github.moltenmc.molten.java.network.packet.StatusPingPacket
 import io.github.moltenmc.molten.java.network.packet.StatusPongPacket
 import io.github.moltenmc.molten.java.network.packet.StatusRequestPacket
@@ -109,6 +111,18 @@ class JavaPacketRegistriesTest {
 
         assertNotNull(entry)
         assertEquals(LoginSuccessPacket::class, entry.packetClass)
+    }
+
+    @Test
+    fun protocol776RegistersClientboundLoginDisconnect() {
+        val entry = JavaPacketRegistries.protocol776().find(
+            state = JavaProtocolState.LOGIN,
+            direction = PacketDirection.CLIENTBOUND,
+            packetId = JavaLoginDisconnectPacketCodec.PACKET_ID,
+        )
+
+        assertNotNull(entry)
+        assertEquals(LoginDisconnectPacket::class, entry.packetClass)
     }
 
     @Test
