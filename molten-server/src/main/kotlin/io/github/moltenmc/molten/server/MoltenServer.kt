@@ -2,6 +2,8 @@ package io.github.moltenmc.molten.server
 
 import io.github.moltenmc.molten.common.world.chunk.WorldChunkService
 import io.github.moltenmc.molten.server.config.ServerConfigurationLoader
+import io.github.moltenmc.molten.server.console.ConsoleServerLogger
+import io.github.moltenmc.molten.server.console.ServerLogger
 import io.github.moltenmc.molten.server.runtime.RuntimeDefinition
 import io.github.moltenmc.molten.server.tick.InMemoryTickMetricsObserver
 import io.github.moltenmc.molten.server.tick.ServerTickLoop
@@ -23,6 +25,8 @@ class MoltenServer(
     private val tickMetrics: InMemoryTickMetricsObserver,
     private val scheduledTicks: Boolean = false,
     private val managedResources: List<AutoCloseable> = emptyList(),
+    private val logger: ServerLogger = ConsoleServerLogger(),
+    private val startupSummary: ServerStartupSummary = ServerStartupSummary.from(configuration),
 ) {
     private val stateRef = AtomicReference(LifecycleState.CREATED)
     private val resourcesClosedRef = AtomicBoolean(false)
@@ -32,11 +36,13 @@ class MoltenServer(
 
     fun start() {
         if (stateRef.compareAndSet(LifecycleState.CREATED, LifecycleState.STARTING)) {
+            startupSummary.lines().forEach(logger::info)
             if (scheduledTicks) {
                 tickLoop.startScheduled(configuration.tickRate)
             } else {
                 tickLoop.start()
             }
+            logger.info("Tick loop started")
             stateRef.set(LifecycleState.RUNNING)
         }
     }
@@ -56,6 +62,7 @@ class MoltenServer(
         tickLoop.stop()
         closeManagedResources()
         stateRef.set(LifecycleState.STOPPED)
+        logger.info("Molten server stopped")
     }
 
     private fun closeManagedResources() {
@@ -83,6 +90,7 @@ class MoltenServer(
             runtimeDefinition: RuntimeDefinition,
             worldStoragePaths: WorldStoragePaths,
             tickTasks: Iterable<TickTask> = emptyList(),
+            logger: ServerLogger = ConsoleServerLogger(),
         ): MoltenServer {
             val worldRuntime = WorldStorageRuntimeFactory(worldStoragePaths).create(runtimeDefinition)
             return create(
@@ -90,6 +98,8 @@ class MoltenServer(
                 worldChunks = worldRuntime.chunks,
                 tickTasks = tickTasks,
                 managedResources = listOf(worldRuntime),
+                logger = logger,
+                startupSummary = ServerStartupSummary.from(configuration, worldRuntime.storageKind),
             )
         }
 
@@ -98,17 +108,23 @@ class MoltenServer(
             worldChunks: WorldChunkService? = null,
             tickTasks: Iterable<TickTask> = emptyList(),
             managedResources: List<AutoCloseable> = emptyList(),
+            logger: ServerLogger = ConsoleServerLogger(),
+            startupSummary: ServerStartupSummary = ServerStartupSummary.from(configuration),
         ): MoltenServer =
             create(
                 configuration = configuration,
                 tickPipeline = TickPipeline(defaultTickTasks(worldChunks, tickTasks)),
                 managedResources = managedResources,
+                logger = logger,
+                startupSummary = startupSummary,
             )
 
         fun create(
             configuration: ServerConfiguration,
             tickPipeline: TickPipeline,
             managedResources: List<AutoCloseable> = emptyList(),
+            logger: ServerLogger = ConsoleServerLogger(),
+            startupSummary: ServerStartupSummary = ServerStartupSummary.from(configuration),
         ): MoltenServer {
             val tickMetrics = InMemoryTickMetricsObserver()
             return MoltenServer(
@@ -120,6 +136,8 @@ class MoltenServer(
                 tickMetrics = tickMetrics,
                 scheduledTicks = true,
                 managedResources = managedResources,
+                logger = logger,
+                startupSummary = startupSummary,
             )
         }
 

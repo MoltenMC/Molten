@@ -10,6 +10,7 @@ import io.github.moltenmc.molten.common.world.chunk.ChunkStorage
 import io.github.moltenmc.molten.common.world.chunk.ChunkTicket
 import io.github.moltenmc.molten.common.world.chunk.ChunkTicketType
 import io.github.moltenmc.molten.common.world.chunk.WorldChunkService
+import io.github.moltenmc.molten.server.console.ServerLogger
 import io.github.moltenmc.molten.server.runtime.RuntimeDefinition
 import io.github.moltenmc.molten.server.runtime.RuntimeMode
 import io.github.moltenmc.molten.server.tick.InMemoryTickMetricsObserver
@@ -210,6 +211,46 @@ class MoltenServerTest {
         }
     }
 
+    @Test
+    fun logsStartupSummaryWhenServerStarts() {
+        val logger = RecordingLogger()
+        val server = MoltenServer.create(
+            configuration = ServerConfiguration.defaults().copy(tickRate = TickRate(100)),
+            tickPipeline = TickPipeline(emptyList()),
+            logger = logger,
+        )
+
+        server.start()
+        server.stop()
+
+        assertTrue(logger.infoMessages.contains("Starting Molten server"))
+        assertTrue(logger.infoMessages.contains("Runtime mode: JAVA_BASED"))
+        assertTrue(logger.infoMessages.contains("World storage: unconfigured"))
+        assertTrue(logger.infoMessages.contains("Tick loop started"))
+        assertTrue(logger.infoMessages.contains("Molten server stopped"))
+    }
+
+    @Test
+    fun logsRuntimeStorageKindInStartupSummary() {
+        withTempDirectory { directory ->
+            val logger = RecordingLogger()
+            val server = MoltenServer.create(
+                configuration = ServerConfiguration.defaults().copy(tickRate = TickRate(100)),
+                runtimeDefinition = RuntimeDefinition.forMode(RuntimeMode.JAVA_ONLY),
+                worldStoragePaths = WorldStoragePaths(directory),
+                logger = logger,
+            )
+
+            try {
+                server.start()
+
+                assertTrue(logger.infoMessages.contains("World storage: JAVA_ANVIL"))
+            } finally {
+                server.stop()
+            }
+        }
+    }
+
     private class LatchTask(
         private val latch: CountDownLatch,
     ) : TickTask {
@@ -229,6 +270,20 @@ class MoltenServerTest {
 
         override fun saveChunk(chunk: Chunk): CompletableFuture<Void> =
             CompletableFuture.completedFuture(null)
+    }
+
+    private class RecordingLogger : ServerLogger {
+        val infoMessages = mutableListOf<String>()
+
+        override fun info(message: String) {
+            infoMessages += message
+        }
+
+        override fun warn(message: String) {
+        }
+
+        override fun error(message: String, cause: Throwable?) {
+        }
     }
 
     private fun withTempDirectory(block: (Path) -> Unit) {
