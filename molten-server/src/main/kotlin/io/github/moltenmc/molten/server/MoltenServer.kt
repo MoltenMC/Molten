@@ -4,6 +4,8 @@ import io.github.moltenmc.molten.common.world.chunk.WorldChunkService
 import io.github.moltenmc.molten.server.config.ServerConfigurationLoader
 import io.github.moltenmc.molten.server.console.ConsoleServerLogger
 import io.github.moltenmc.molten.server.console.ServerLogger
+import io.github.moltenmc.molten.server.network.ProtocolListener
+import io.github.moltenmc.molten.server.network.ProtocolListenerFactory
 import io.github.moltenmc.molten.server.runtime.RuntimeDefinition
 import io.github.moltenmc.molten.server.tick.InMemoryTickMetricsObserver
 import io.github.moltenmc.molten.server.tick.ServerTickLoop
@@ -27,6 +29,7 @@ class MoltenServer(
     private val managedResources: List<AutoCloseable> = emptyList(),
     private val logger: ServerLogger = ConsoleServerLogger(),
     private val startupSummary: ServerStartupSummary = ServerStartupSummary.from(configuration),
+    private val protocolListeners: List<ProtocolListener> = emptyList(),
 ) {
     private val stateRef = AtomicReference(LifecycleState.CREATED)
     private val resourcesClosedRef = AtomicBoolean(false)
@@ -37,6 +40,10 @@ class MoltenServer(
     fun start() {
         if (stateRef.compareAndSet(LifecycleState.CREATED, LifecycleState.STARTING)) {
             startupSummary.lines().forEach(logger::info)
+            protocolListeners.forEach { listener ->
+                listener.start()
+                logger.info("Protocol listener started: ${listener.protocol}")
+            }
             if (scheduledTicks) {
                 tickLoop.startScheduled(configuration.tickRate)
             } else {
@@ -60,6 +67,7 @@ class MoltenServer(
         }
         stateRef.set(LifecycleState.STOPPING)
         tickLoop.stop()
+        stopProtocolListeners()
         closeManagedResources()
         stateRef.set(LifecycleState.STOPPED)
         logger.info("Molten server stopped")
@@ -72,6 +80,13 @@ class MoltenServer(
 
         managedResources.asReversed().forEach { resource ->
             resource.close()
+        }
+    }
+
+    private fun stopProtocolListeners() {
+        protocolListeners.asReversed().forEach { listener ->
+            listener.stop()
+            logger.info("Protocol listener stopped: ${listener.protocol}")
         }
     }
 
@@ -100,6 +115,7 @@ class MoltenServer(
                 managedResources = listOf(worldRuntime),
                 logger = logger,
                 startupSummary = ServerStartupSummary.from(configuration, worldRuntime.storageKind),
+                protocolListeners = ProtocolListenerFactory(configuration).create(runtimeDefinition),
             )
         }
 
@@ -110,6 +126,7 @@ class MoltenServer(
             managedResources: List<AutoCloseable> = emptyList(),
             logger: ServerLogger = ConsoleServerLogger(),
             startupSummary: ServerStartupSummary = ServerStartupSummary.from(configuration),
+            protocolListeners: List<ProtocolListener> = emptyList(),
         ): MoltenServer =
             create(
                 configuration = configuration,
@@ -117,6 +134,7 @@ class MoltenServer(
                 managedResources = managedResources,
                 logger = logger,
                 startupSummary = startupSummary,
+                protocolListeners = protocolListeners,
             )
 
         fun create(
@@ -125,6 +143,7 @@ class MoltenServer(
             managedResources: List<AutoCloseable> = emptyList(),
             logger: ServerLogger = ConsoleServerLogger(),
             startupSummary: ServerStartupSummary = ServerStartupSummary.from(configuration),
+            protocolListeners: List<ProtocolListener> = emptyList(),
         ): MoltenServer {
             val tickMetrics = InMemoryTickMetricsObserver()
             return MoltenServer(
@@ -138,6 +157,7 @@ class MoltenServer(
                 managedResources = managedResources,
                 logger = logger,
                 startupSummary = startupSummary,
+                protocolListeners = protocolListeners,
             )
         }
 

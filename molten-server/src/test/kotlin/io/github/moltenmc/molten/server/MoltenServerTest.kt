@@ -11,8 +11,10 @@ import io.github.moltenmc.molten.common.world.chunk.ChunkTicket
 import io.github.moltenmc.molten.common.world.chunk.ChunkTicketType
 import io.github.moltenmc.molten.common.world.chunk.WorldChunkService
 import io.github.moltenmc.molten.server.console.ServerLogger
+import io.github.moltenmc.molten.server.network.ProtocolListener
 import io.github.moltenmc.molten.server.runtime.RuntimeDefinition
 import io.github.moltenmc.molten.server.runtime.RuntimeMode
+import io.github.moltenmc.molten.server.runtime.ProtocolStack
 import io.github.moltenmc.molten.server.tick.InMemoryTickMetricsObserver
 import io.github.moltenmc.molten.server.tick.ServerTickLoop
 import io.github.moltenmc.molten.server.tick.TickRate
@@ -251,6 +253,26 @@ class MoltenServerTest {
         }
     }
 
+    @Test
+    fun startsAndStopsProtocolListenersWithServer() {
+        val listener = RecordingProtocolListener(ProtocolStack.JAVA_EDITION)
+        val server = MoltenServer.create(
+            configuration = ServerConfiguration.defaults().copy(tickRate = TickRate(100)),
+            tickPipeline = TickPipeline(emptyList()),
+            protocolListeners = listOf(listener),
+        )
+
+        server.start()
+
+        assertTrue(listener.isRunning)
+        assertEquals(1, listener.startCalls)
+
+        server.stop()
+
+        assertFalse(listener.isRunning)
+        assertEquals(1, listener.stopCalls)
+    }
+
     private class LatchTask(
         private val latch: CountDownLatch,
     ) : TickTask {
@@ -283,6 +305,26 @@ class MoltenServerTest {
         }
 
         override fun error(message: String, cause: Throwable?) {
+        }
+    }
+
+    private class RecordingProtocolListener(
+        override val protocol: ProtocolStack,
+    ) : ProtocolListener {
+        var startCalls: Int = 0
+        var stopCalls: Int = 0
+
+        override var isRunning: Boolean = false
+            private set
+
+        override fun start() {
+            startCalls++
+            isRunning = true
+        }
+
+        override fun stop() {
+            stopCalls++
+            isRunning = false
         }
     }
 
