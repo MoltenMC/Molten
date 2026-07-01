@@ -3,6 +3,7 @@ package io.github.moltenmc.molten.java.network
 import io.github.moltenmc.molten.java.network.codec.JavaPacketDecoder
 import io.github.moltenmc.molten.java.network.codec.JavaVarIntFrameDecoder
 import io.github.moltenmc.molten.java.network.codec.JavaVarIntFrameEncoder
+import io.github.moltenmc.molten.java.network.handler.JavaHandshakeStateHandler
 import io.github.moltenmc.molten.java.network.session.JavaProtocolStateHolder
 import io.netty5.bootstrap.ServerBootstrap
 import io.netty5.channel.Channel
@@ -56,6 +57,7 @@ class DefaultJavaNetworkListener(
                             channel.pipeline()
                                 .addLast("java-varint-frame-decoder", JavaVarIntFrameDecoder())
                                 .addLast("java-packet-decoder", JavaPacketDecoder(stateHolder = protocolState))
+                                .addLast("java-handshake-state-handler", JavaHandshakeStateHandler(protocolState))
                                 .addLast("java-varint-frame-encoder", JavaVarIntFrameEncoder())
                         }
                     },
