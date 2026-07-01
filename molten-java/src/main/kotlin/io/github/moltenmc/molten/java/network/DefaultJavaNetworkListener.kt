@@ -5,8 +5,9 @@ import io.github.moltenmc.molten.java.network.codec.JavaPacketEncoder
 import io.github.moltenmc.molten.java.network.codec.JavaVarIntFrameDecoder
 import io.github.moltenmc.molten.java.network.codec.JavaVarIntFrameEncoder
 import io.github.moltenmc.molten.java.network.handler.JavaHandshakeStateHandler
+import io.github.moltenmc.molten.java.network.handler.JavaLoginStartHandler
 import io.github.moltenmc.molten.java.network.handler.JavaStatusRequestHandler
-import io.github.moltenmc.molten.java.network.session.JavaProtocolStateHolder
+import io.github.moltenmc.molten.java.network.session.JavaSessionHolder
 import io.netty5.bootstrap.ServerBootstrap
 import io.netty5.channel.Channel
 import io.netty5.channel.ChannelInitializer
@@ -55,13 +56,14 @@ class DefaultJavaNetworkListener(
                 .childHandler(
                     object : ChannelInitializer<SocketChannel>() {
                         override fun initChannel(channel: SocketChannel) {
-                            val protocolState = JavaProtocolStateHolder()
+                            val session = JavaSessionHolder()
                             channel.pipeline()
                                 .addLast("java-varint-frame-decoder", JavaVarIntFrameDecoder())
-                                .addLast("java-packet-decoder", JavaPacketDecoder(stateHolder = protocolState))
-                                .addLast("java-handshake-state-handler", JavaHandshakeStateHandler(protocolState))
+                                .addLast("java-packet-decoder", JavaPacketDecoder(stateHolder = session))
+                                .addLast("java-handshake-state-handler", JavaHandshakeStateHandler(session))
                                 .addLast("java-status-request-handler", JavaStatusRequestHandler())
-                                .addLast("java-packet-encoder", JavaPacketEncoder(stateHolder = protocolState))
+                                .addLast("java-login-start-handler", JavaLoginStartHandler(session))
+                                .addLast("java-packet-encoder", JavaPacketEncoder(stateHolder = session))
                                 .addLast("java-varint-frame-encoder", JavaVarIntFrameEncoder())
                         }
                     },

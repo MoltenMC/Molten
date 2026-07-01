@@ -2,9 +2,9 @@ package io.github.moltenmc.molten.java.network.session
 
 import io.github.moltenmc.molten.java.protocol.JavaProtocolState
 
-open class JavaProtocolStateHolder(
+class JavaSessionHolder(
     initialState: JavaProtocolState = JavaProtocolState.HANDSHAKE,
-) {
+) : JavaProtocolStateHolder(initialState) {
     @Volatile
-    var state: JavaProtocolState = initialState
+    var profile: JavaSessionProfile? = null
 }
