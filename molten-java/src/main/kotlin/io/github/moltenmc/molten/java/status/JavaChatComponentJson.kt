@@ -1,12 +1,17 @@
 package io.github.moltenmc.molten.java.status
 
-object JavaJson {
-    fun textComponent(text: String): String =
-        "{\"text\":\"${text.escape()}\"}"
+import io.github.moltenmc.molten.common.text.ChatComponent
+import io.github.moltenmc.molten.common.text.TextComponent
 
-    fun String.escape(): String =
+object JavaChatComponentJson {
+    fun encode(component: ChatComponent): String =
+        when (component) {
+            is TextComponent -> "{\"text\":\"${component.plainText.escapeJson()}\"}"
+        }
+
+    fun String.escapeJson(): String =
         buildString {
-            this@escape.forEach { character ->
+            this@escapeJson.forEach { character ->
                 when (character) {
                     '\\' -> append("\\\\")
                     '"' -> append("\\\"")

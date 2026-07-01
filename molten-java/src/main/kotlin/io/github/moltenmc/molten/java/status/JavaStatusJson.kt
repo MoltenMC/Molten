@@ -1,5 +1,6 @@
 package io.github.moltenmc.molten.java.status
 
+import io.github.moltenmc.molten.common.text.TextComponent
 import io.github.moltenmc.molten.java.JavaEditionProtocol
 
 object JavaStatusJson {
@@ -21,10 +22,8 @@ object JavaStatusJson {
             append("\"online\":")
             append(status.onlinePlayers)
             append("},")
-            append("\"description\":{")
-            append("\"text\":\"")
-            append(JavaJson.run { status.description.escape() })
-            append("\"}")
+            append("\"description\":")
+            append(JavaChatComponentJson.encode(TextComponent(status.description)))
             append('}')
         }
     }
