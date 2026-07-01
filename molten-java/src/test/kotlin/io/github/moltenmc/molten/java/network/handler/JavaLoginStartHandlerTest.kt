@@ -3,6 +3,7 @@ package io.github.moltenmc.molten.java.network.handler
 import io.github.moltenmc.molten.java.JavaEditionProtocol
 import io.github.moltenmc.molten.java.network.packet.JavaPacket
 import io.github.moltenmc.molten.java.network.packet.LoginStartPacket
+import io.github.moltenmc.molten.java.network.packet.LoginSuccessPacket
 import io.github.moltenmc.molten.java.network.session.JavaSessionHolder
 import io.github.moltenmc.molten.java.protocol.JavaProtocolState
 import java.util.UUID
@@ -22,7 +23,14 @@ class JavaLoginStartHandlerTest {
             playerUuid = uuid,
         )
 
-        assertSame(packet, handler.handle(packet))
+        assertEquals(
+            LoginSuccessPacket(
+                packetId = 0x02,
+                uuid = uuid,
+                username = "Player",
+            ),
+            handler.handle(packet),
+        )
         assertEquals("Player", sessionHolder.profile?.name)
         assertEquals(uuid, sessionHolder.profile?.uuid)
         assertEquals(JavaProtocolState.CONFIGURATION, sessionHolder.state)
