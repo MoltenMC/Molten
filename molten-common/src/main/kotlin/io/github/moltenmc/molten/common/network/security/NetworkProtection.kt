@@ -1,0 +1,14 @@
+package io.github.moltenmc.molten.common.network.security
+
+enum class NetworkProtection {
+    MAX_PACKET_SIZE,
+    MAX_BATCH_SIZE,
+    COMPRESSION_BOMB,
+    LOGIN_RATE_LIMIT,
+    MOVEMENT_SANITY,
+    INVENTORY_ACTION_VALIDATION,
+    CHAT_COMMAND_RATE_LIMIT,
+    PLUGIN_MESSAGE_SIZE,
+    MALFORMED_PACKET_DISCONNECT,
+    BUFFER_LEAK_DETECTION,
+}

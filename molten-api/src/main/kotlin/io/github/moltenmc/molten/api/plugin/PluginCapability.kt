@@ -1,0 +1,14 @@
+package io.github.moltenmc.molten.api.plugin
+
+enum class PluginCapability {
+    REGISTER_ECS_COMPONENTS,
+    REGISTER_ECS_SYSTEMS,
+    SUBSCRIBE_EVENTS,
+    REGISTER_COMMANDS,
+    REGISTER_PERMISSIONS,
+    SCHEDULE_TASKS,
+    ACCESS_WORLD_API,
+    ACCESS_ENTITY_API,
+    PERSISTENT_DATA_CONTAINERS,
+    SERVICE_REGISTRY,
+}
