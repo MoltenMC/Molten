@@ -1,17 +1,35 @@
 package io.github.moltenmc.molten.server
 
+import io.github.moltenmc.molten.common.registry.RegistryKey
+import io.github.moltenmc.molten.common.world.ChunkPos
+import io.github.moltenmc.molten.common.world.DimensionId
+import io.github.moltenmc.molten.common.world.WorldId
+import io.github.moltenmc.molten.common.world.chunk.Chunk
+import io.github.moltenmc.molten.common.world.chunk.ChunkKey
+import io.github.moltenmc.molten.common.world.chunk.ChunkStorage
+import io.github.moltenmc.molten.common.world.chunk.ChunkTicket
+import io.github.moltenmc.molten.common.world.chunk.ChunkTicketType
+import io.github.moltenmc.molten.common.world.chunk.WorldChunkService
+import io.github.moltenmc.molten.server.runtime.RuntimeDefinition
+import io.github.moltenmc.molten.server.runtime.RuntimeMode
 import io.github.moltenmc.molten.server.tick.InMemoryTickMetricsObserver
 import io.github.moltenmc.molten.server.tick.ServerTickLoop
 import io.github.moltenmc.molten.server.tick.TickRate
 import io.github.moltenmc.molten.server.tick.TickTask
 import io.github.moltenmc.molten.server.tick.TickPipeline
 import io.github.moltenmc.molten.server.tick.TickPipelineStep
+import io.github.moltenmc.molten.server.world.WorldStoragePaths
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class MoltenServerTest {
@@ -86,6 +104,84 @@ class MoltenServerTest {
         }
     }
 
+    @Test
+    fun createdServerIncludesWorldChunkTickTaskWhenChunksAreProvided() {
+        val worldId = WorldId(UUID(0, 1))
+        val dimensionId = DimensionId(RegistryKey.parse("minecraft:overworld"))
+        val position = ChunkPos(2, 3)
+        val key = ChunkKey(worldId, dimensionId, position)
+        val worldChunks = WorldChunkService.create(
+            RecordingChunkStorage(CompletableFuture.completedFuture(Chunk(position, emptyList()))),
+        )
+        val latch = CountDownLatch(1)
+        val server = MoltenServer.create(
+            configuration = ServerConfiguration.defaults().copy(tickRate = TickRate(100)),
+            worldChunks = worldChunks,
+            tickTasks = listOf(LatchTask(latch)),
+        )
+
+        worldChunks.loadChunk(
+            worldId = worldId,
+            dimensionId = dimensionId,
+            position = position,
+            tickets = setOf(
+                ChunkTicket(
+                    type = ChunkTicketType.TEMPORARY,
+                    owner = "temporary",
+                    expiresAtTick = 0,
+                ),
+            ),
+        ).get()
+
+        try {
+            server.start()
+
+            assertTrue(latch.await(1, TimeUnit.SECONDS))
+            assertNull(worldChunks.loadedChunk(key))
+        } finally {
+            server.stop()
+        }
+    }
+
+    @Test
+    fun closesManagedResourcesWhenStopped() {
+        val closeCount = AtomicInteger(0)
+        val server = MoltenServer.create(
+            configuration = ServerConfiguration.defaults().copy(tickRate = TickRate(100)),
+            tickPipeline = TickPipeline(emptyList()),
+            managedResources = listOf(AutoCloseable { closeCount.incrementAndGet() }),
+        )
+
+        server.start()
+        server.stop()
+        server.stop()
+
+        assertEquals(1, closeCount.get())
+    }
+
+    @Test
+    fun createsServerFromRuntimeDefinitionAndWorldStoragePaths() {
+        withTempDirectory { directory ->
+            val paths = WorldStoragePaths(directory)
+            val latch = CountDownLatch(1)
+            val server = MoltenServer.create(
+                configuration = ServerConfiguration.defaults().copy(tickRate = TickRate(100)),
+                runtimeDefinition = RuntimeDefinition.forMode(RuntimeMode.JAVA_ONLY),
+                worldStoragePaths = paths,
+                tickTasks = listOf(LatchTask(latch)),
+            )
+
+            try {
+                server.start()
+
+                assertTrue(latch.await(1, TimeUnit.SECONDS))
+                assertTrue(Files.isDirectory(paths.javaRegionDirectory))
+            } finally {
+                server.stop()
+            }
+        }
+    }
+
     private class LatchTask(
         private val latch: CountDownLatch,
     ) : TickTask {
@@ -94,6 +190,25 @@ class MoltenServerTest {
         override fun execute(currentTick: Long): CompletableFuture<Unit> {
             latch.countDown()
             return CompletableFuture.completedFuture(Unit)
+        }
+    }
+
+    private class RecordingChunkStorage(
+        private val loadResult: CompletableFuture<Chunk?>,
+    ) : ChunkStorage {
+        override fun loadChunk(position: ChunkPos): CompletableFuture<Chunk?> =
+            loadResult
+
+        override fun saveChunk(chunk: Chunk): CompletableFuture<Void> =
+            CompletableFuture.completedFuture(null)
+    }
+
+    private fun withTempDirectory(block: (Path) -> Unit) {
+        val directory = Files.createTempDirectory("molten-server-test")
+        try {
+            block(directory)
+        } finally {
+            directory.toFile().deleteRecursively()
         }
     }
 }
