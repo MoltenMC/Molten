@@ -263,10 +263,12 @@ class MoltenServerTest {
 
     @Test
     fun startsAndStopsProtocolListenersWithServer() {
+        val logger = RecordingLogger()
         val listener = RecordingProtocolListener(ProtocolStack.JAVA_EDITION)
         val server = MoltenServer.create(
             configuration = ServerConfiguration.defaults().copy(tickRate = TickRate(100)),
             tickPipeline = TickPipeline(emptyList()),
+            logger = logger,
             protocolListeners = listOf(listener),
         )
 
@@ -274,6 +276,7 @@ class MoltenServerTest {
 
         assertTrue(listener.isRunning)
         assertEquals(1, listener.startCalls)
+        assertTrue(logger.infoMessages.contains("Protocol listener started: JAVA_EDITION (127.0.0.1:25565)"))
 
         server.stop()
 
@@ -324,6 +327,9 @@ class MoltenServerTest {
 
         override var isRunning: Boolean = false
             private set
+
+        override val boundAddress: String
+            get() = "127.0.0.1:25565"
 
         override fun start() {
             startCalls++

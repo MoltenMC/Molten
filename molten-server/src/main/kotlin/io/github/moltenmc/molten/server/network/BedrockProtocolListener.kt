@@ -3,6 +3,7 @@ package io.github.moltenmc.molten.server.network
 import io.github.moltenmc.molten.bedrock.network.BedrockNetworkListener
 import io.github.moltenmc.molten.server.ServerConfiguration
 import io.github.moltenmc.molten.server.runtime.ProtocolStack
+import java.net.InetSocketAddress
 import java.util.concurrent.atomic.AtomicBoolean
 
 class BedrockProtocolListener(
@@ -16,9 +17,18 @@ class BedrockProtocolListener(
     override val isRunning: Boolean
         get() = runningRef.get()
 
+    override val boundAddress: String?
+        get() = delegate?.localAddress?.formatEndpoint()
+            ?: "${configuration.bindAddress}:${configuration.bedrockPort}".takeIf { isRunning }
+
     override fun start() {
         if (runningRef.compareAndSet(false, true)) {
-            delegate?.bind(configuration.bindAddress, configuration.bedrockPort)
+            try {
+                delegate?.bind(configuration.bindAddress, configuration.bedrockPort)
+            } catch (error: Throwable) {
+                runningRef.set(false)
+                throw error
+            }
         }
     }
 
@@ -27,4 +37,7 @@ class BedrockProtocolListener(
             delegate?.close()
         }
     }
+
+    private fun InetSocketAddress.formatEndpoint(): String =
+        "${hostString}:${port}"
 }

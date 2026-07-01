@@ -31,7 +31,7 @@ class DefaultJavaNetworkListener(
     val isBound: Boolean
         get() = boundRef.get()
 
-    val localAddress: InetSocketAddress?
+    override val localAddress: InetSocketAddress?
         get() = serverChannel?.localAddress() as? InetSocketAddress
 
     override fun bind(host: String, port: Int) {

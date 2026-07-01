@@ -13,7 +13,7 @@ class DefaultBedrockNetworkListener : BedrockNetworkListener {
     val isBound: Boolean
         get() = boundRef.get()
 
-    val localAddress: InetSocketAddress?
+    override val localAddress: InetSocketAddress?
         get() = channel?.localAddress as? InetSocketAddress
 
     override fun bind(host: String, port: Int) {

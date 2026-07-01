@@ -5,6 +5,8 @@ import io.github.moltenmc.molten.server.runtime.ProtocolStack
 interface ProtocolListener : AutoCloseable {
     val protocol: ProtocolStack
     val isRunning: Boolean
+    val boundAddress: String?
+        get() = null
 
     fun start()
 

@@ -42,7 +42,7 @@ class MoltenServer(
             startupSummary.lines().forEach(logger::info)
             protocolListeners.forEach { listener ->
                 listener.start()
-                logger.info("Protocol listener started: ${listener.protocol}")
+                logger.info("Protocol listener started: ${listener.protocol} ${listener.boundEndpointLabel()}")
             }
             if (scheduledTicks) {
                 tickLoop.startScheduled(configuration.tickRate)
@@ -89,6 +89,9 @@ class MoltenServer(
             logger.info("Protocol listener stopped: ${listener.protocol}")
         }
     }
+
+    private fun ProtocolListener.boundEndpointLabel(): String =
+        boundAddress?.let { "($it)" } ?: "(unbound)"
 
     companion object {
         fun create(
