@@ -6,6 +6,7 @@ dependencies {
     implementation(project(":molten-translator"))
     implementation(libs.molten.anvil)
     implementation(libs.netty.buffer)
+    implementation(libs.netty.codec)
     implementation(libs.netty.common)
     implementation(libs.netty.transport)
 }

@@ -1,5 +1,7 @@
 package io.github.moltenmc.molten.java.network
 
+import io.github.moltenmc.molten.java.network.codec.JavaVarIntFrameDecoder
+import io.github.moltenmc.molten.java.network.codec.JavaVarIntFrameEncoder
 import io.netty5.bootstrap.ServerBootstrap
 import io.netty5.channel.Channel
 import io.netty5.channel.ChannelInitializer
@@ -48,6 +50,9 @@ class DefaultJavaNetworkListener(
                 .childHandler(
                     object : ChannelInitializer<SocketChannel>() {
                         override fun initChannel(channel: SocketChannel) {
+                            channel.pipeline()
+                                .addLast("java-varint-frame-decoder", JavaVarIntFrameDecoder())
+                                .addLast("java-varint-frame-encoder", JavaVarIntFrameEncoder())
                         }
                     },
                 )

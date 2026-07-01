@@ -12,6 +12,7 @@ molten-nbt = { module = "io.github.moltenmc:nbt", version.ref = "nbt" }
 molten-leveldb = { module = "io.github.moltenmc:leveldb", version.ref = "leveldb" }
 molten-anvil = { module = "io.github.moltenmc:anvil", version.ref = "anvil" }
 netty-buffer = { module = "io.netty:netty5-buffer", version.ref = "netty" }
+netty-codec = { module = "io.netty:netty5-codec", version.ref = "netty" }
 netty-common = { module = "io.netty:netty5-common", version.ref = "netty" }
 netty-transport = { module = "io.netty:netty5-transport", version.ref = "netty" }
 raknetty-core = { module = "io.github.moltenmc.raknetty:raknetty-core", version.ref = "raknetty" }
