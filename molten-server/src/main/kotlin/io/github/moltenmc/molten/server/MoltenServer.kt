@@ -1,6 +1,7 @@
 package io.github.moltenmc.molten.server
 
 import io.github.moltenmc.molten.common.world.chunk.WorldChunkService
+import io.github.moltenmc.molten.server.config.ServerConfigurationLoader
 import io.github.moltenmc.molten.server.runtime.RuntimeDefinition
 import io.github.moltenmc.molten.server.tick.InMemoryTickMetricsObserver
 import io.github.moltenmc.molten.server.tick.ServerTickLoop
@@ -11,6 +12,7 @@ import io.github.moltenmc.molten.server.tick.TickMetricsSnapshot
 import io.github.moltenmc.molten.server.tick.WorldChunkTickTask
 import io.github.moltenmc.molten.server.world.WorldStoragePaths
 import io.github.moltenmc.molten.server.world.WorldStorageRuntimeFactory
+import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
@@ -135,7 +137,7 @@ class MoltenServer(
 }
 
 fun main() {
-    val server = MoltenServer.create(ServerConfiguration.defaults())
+    val server = MoltenServer.create(ServerConfigurationLoader(Path.of(".")).loadOrCreate())
     server.start()
     Runtime.getRuntime().addShutdownHook(Thread(server::stop, "molten-shutdown"))
 }
