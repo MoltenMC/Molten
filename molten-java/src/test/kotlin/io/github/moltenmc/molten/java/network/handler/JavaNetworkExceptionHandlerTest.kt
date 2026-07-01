@@ -5,8 +5,10 @@ import io.github.moltenmc.molten.common.network.ProtocolContext
 import io.github.moltenmc.molten.java.JavaEditionProtocol
 import io.github.moltenmc.molten.java.network.codec.JavaLoginStartPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaPacketDecoder
+import io.github.moltenmc.molten.java.network.packet.ConfigurationDisconnectPacket
 import io.github.moltenmc.molten.java.network.packet.LoginDisconnectPacket
 import io.github.moltenmc.molten.java.network.packet.LoginStartPacket
+import io.github.moltenmc.molten.java.network.packet.PlayDisconnectPacket
 import io.github.moltenmc.molten.java.network.session.JavaSessionHolder
 import io.github.moltenmc.molten.java.protocol.JavaProtocolState
 import io.netty5.buffer.BufferAllocator
@@ -32,11 +34,39 @@ class JavaNetworkExceptionHandlerTest {
     }
 
     @Test
-    fun nonLoginExceptionClosesWithoutPacket() {
+    fun configurationExceptionWritesDisconnectAndClosesChannel() {
+        val sessionHolder = JavaSessionHolder(JavaProtocolState.CONFIGURATION)
+        val channel = EmbeddedChannel(JavaNetworkExceptionHandler(sessionHolder))
+
+        channel.pipeline().fireChannelExceptionCaught(IllegalStateException("Broken configuration packet."))
+
+        val packet = channel.readOutbound<ConfigurationDisconnectPacket>()
+        assertEquals(0x02, packet.packetId)
+        assertEquals("{\"text\":\"Broken configuration packet.\"}", packet.reasonJson)
+        assertEquals(JavaProtocolState.DISCONNECTED, sessionHolder.state)
+        assertFalse(channel.isOpen)
+    }
+
+    @Test
+    fun playExceptionWritesDisconnectAndClosesChannel() {
         val sessionHolder = JavaSessionHolder(JavaProtocolState.PLAY)
         val channel = EmbeddedChannel(JavaNetworkExceptionHandler(sessionHolder))
 
         channel.pipeline().fireChannelExceptionCaught(IllegalStateException("Broken play packet."))
+
+        val packet = channel.readOutbound<PlayDisconnectPacket>()
+        assertEquals(0x1d, packet.packetId)
+        assertEquals("{\"text\":\"Broken play packet.\"}", packet.reasonJson)
+        assertEquals(JavaProtocolState.DISCONNECTED, sessionHolder.state)
+        assertFalse(channel.isOpen)
+    }
+
+    @Test
+    fun handshakeExceptionClosesWithoutPacket() {
+        val sessionHolder = JavaSessionHolder(JavaProtocolState.HANDSHAKE)
+        val channel = EmbeddedChannel(JavaNetworkExceptionHandler(sessionHolder))
+
+        channel.pipeline().fireChannelExceptionCaught(IllegalStateException("Broken handshake packet."))
 
         assertEquals(null, channel.readOutbound<LoginDisconnectPacket>())
         assertEquals(JavaProtocolState.DISCONNECTED, sessionHolder.state)

@@ -13,12 +13,23 @@ class JavaNetworkExceptionHandler(
         JavaDisconnectPackets.login(reasonFor(cause))
 
     override fun channelExceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
-        if (sessionHolder.state == JavaProtocolState.LOGIN) {
-            ctx.channel().writeAndFlush(loginDisconnectFor(cause)).addListener {
+        val reason = reasonFor(cause)
+        val disconnectPacket = when (sessionHolder.state) {
+            JavaProtocolState.LOGIN -> JavaDisconnectPackets.login(reason)
+            JavaProtocolState.CONFIGURATION -> JavaDisconnectPackets.configuration(reason)
+            JavaProtocolState.PLAY -> JavaDisconnectPackets.play(reason)
+            JavaProtocolState.HANDSHAKE,
+            JavaProtocolState.STATUS,
+            JavaProtocolState.DISCONNECTED,
+            -> null
+        }
+
+        if (disconnectPacket == null) {
+            closeAsDisconnected(ctx)
+        } else {
+            ctx.channel().writeAndFlush(disconnectPacket).addListener {
                 closeAsDisconnected(ctx)
             }
-        } else {
-            closeAsDisconnected(ctx)
         }
     }
 
@@ -30,5 +41,5 @@ class JavaNetworkExceptionHandler(
     private fun reasonFor(cause: Throwable): String =
         cause.message
             ?.takeIf { it.isNotBlank() }
-            ?: "Disconnected during login."
+            ?: "Disconnected."
 }

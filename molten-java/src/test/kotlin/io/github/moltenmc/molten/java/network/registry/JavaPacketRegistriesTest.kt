@@ -2,23 +2,27 @@ package io.github.moltenmc.molten.java.network.registry
 
 import io.github.moltenmc.molten.common.network.PacketDirection
 import io.github.moltenmc.molten.java.network.codec.JavaAcknowledgeFinishConfigurationPacketCodec
+import io.github.moltenmc.molten.java.network.codec.JavaConfigurationDisconnectPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaFinishConfigurationPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaHandshakePacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaLoginDisconnectPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaLoginStartPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaLoginSuccessPacketCodec
+import io.github.moltenmc.molten.java.network.codec.JavaPlayDisconnectPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaPlayJoinPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaStatusPingPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaStatusPongPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaStatusRequestPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaStatusResponsePacketCodec
 import io.github.moltenmc.molten.java.network.packet.AcknowledgeFinishConfigurationPacket
+import io.github.moltenmc.molten.java.network.packet.ConfigurationDisconnectPacket
 import io.github.moltenmc.molten.java.network.packet.FinishConfigurationPacket
 import io.github.moltenmc.molten.java.network.packet.HandshakePacket
 import io.github.moltenmc.molten.java.network.packet.LoginStartPacket
 import io.github.moltenmc.molten.java.network.packet.LoginSuccessPacket
 import io.github.moltenmc.molten.java.network.packet.JavaPlayJoinPacket
 import io.github.moltenmc.molten.java.network.packet.LoginDisconnectPacket
+import io.github.moltenmc.molten.java.network.packet.PlayDisconnectPacket
 import io.github.moltenmc.molten.java.network.packet.StatusPingPacket
 import io.github.moltenmc.molten.java.network.packet.StatusPongPacket
 import io.github.moltenmc.molten.java.network.packet.StatusRequestPacket
@@ -138,6 +142,18 @@ class JavaPacketRegistriesTest {
     }
 
     @Test
+    fun protocol776RegistersClientboundConfigurationDisconnect() {
+        val entry = JavaPacketRegistries.protocol776().find(
+            state = JavaProtocolState.CONFIGURATION,
+            direction = PacketDirection.CLIENTBOUND,
+            packetId = JavaConfigurationDisconnectPacketCodec.PACKET_ID,
+        )
+
+        assertNotNull(entry)
+        assertEquals(ConfigurationDisconnectPacket::class, entry.packetClass)
+    }
+
+    @Test
     fun protocol776RegistersServerboundAcknowledgeFinishConfiguration() {
         val entry = JavaPacketRegistries.protocol776().find(
             state = JavaProtocolState.CONFIGURATION,
@@ -159,5 +175,17 @@ class JavaPacketRegistriesTest {
 
         assertNotNull(entry)
         assertEquals(JavaPlayJoinPacket::class, entry.packetClass)
+    }
+
+    @Test
+    fun protocol776RegistersClientboundPlayDisconnect() {
+        val entry = JavaPacketRegistries.protocol776().find(
+            state = JavaProtocolState.PLAY,
+            direction = PacketDirection.CLIENTBOUND,
+            packetId = JavaPlayDisconnectPacketCodec.PACKET_ID,
+        )
+
+        assertNotNull(entry)
+        assertEquals(PlayDisconnectPacket::class, entry.packetClass)
     }
 }
