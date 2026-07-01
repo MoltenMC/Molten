@@ -67,7 +67,7 @@ class JavaPacketDecoderTest {
         val payload = JavaHandshakePacketCodec().encode(handshake, protocolContext)
         val decoder = JavaPacketDecoder(
             registry = JavaPacketRegistries.protocol776(),
-            stateHolder = JavaProtocolStateHolder(JavaProtocolState.LOGIN),
+            stateHolder = JavaProtocolStateHolder(JavaProtocolState.PLAY),
         )
 
         BufferAllocator.onHeapUnpooled().use { allocator ->
