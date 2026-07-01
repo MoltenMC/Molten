@@ -15,6 +15,7 @@ import io.github.moltenmc.molten.java.network.codec.JavaStatusPingPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaStatusPongPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaStatusRequestPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaStatusResponsePacketCodec
+import io.github.moltenmc.molten.java.network.codec.JavaSystemChatPacketCodec
 import io.github.moltenmc.molten.java.network.packet.AcknowledgeFinishConfigurationPacket
 import io.github.moltenmc.molten.java.network.packet.ConfigurationDisconnectPacket
 import io.github.moltenmc.molten.java.network.packet.FinishConfigurationPacket
@@ -28,6 +29,7 @@ import io.github.moltenmc.molten.java.network.packet.StatusPingPacket
 import io.github.moltenmc.molten.java.network.packet.StatusPongPacket
 import io.github.moltenmc.molten.java.network.packet.StatusRequestPacket
 import io.github.moltenmc.molten.java.network.packet.StatusResponsePacket
+import io.github.moltenmc.molten.java.network.packet.SystemChatPacket
 import io.github.moltenmc.molten.java.protocol.JavaProtocolState
 
 object JavaPacketRegistries {
@@ -158,6 +160,16 @@ object JavaPacketRegistries {
                     packetId = JavaPlayJoinPacketCodec.PACKET_ID,
                     packetClass = JavaPlayJoinPacket::class,
                     codec = JavaPlayJoinPacketCodec(),
+                    state = JavaProtocolState.PLAY,
+                    direction = PacketDirection.CLIENTBOUND,
+                    frequencyClass = PacketFrequencyClass.LOW,
+                ),
+            )
+            register(
+                JavaPacketRegistryEntry(
+                    packetId = JavaSystemChatPacketCodec.PACKET_ID,
+                    packetClass = SystemChatPacket::class,
+                    codec = JavaSystemChatPacketCodec(),
                     state = JavaProtocolState.PLAY,
                     direction = PacketDirection.CLIENTBOUND,
                     frequencyClass = PacketFrequencyClass.LOW,

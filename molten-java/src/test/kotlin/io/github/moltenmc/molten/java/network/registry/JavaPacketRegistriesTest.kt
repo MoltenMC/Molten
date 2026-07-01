@@ -14,6 +14,7 @@ import io.github.moltenmc.molten.java.network.codec.JavaStatusPingPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaStatusPongPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaStatusRequestPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaStatusResponsePacketCodec
+import io.github.moltenmc.molten.java.network.codec.JavaSystemChatPacketCodec
 import io.github.moltenmc.molten.java.network.packet.AcknowledgeFinishConfigurationPacket
 import io.github.moltenmc.molten.java.network.packet.ConfigurationDisconnectPacket
 import io.github.moltenmc.molten.java.network.packet.FinishConfigurationPacket
@@ -27,6 +28,7 @@ import io.github.moltenmc.molten.java.network.packet.StatusPingPacket
 import io.github.moltenmc.molten.java.network.packet.StatusPongPacket
 import io.github.moltenmc.molten.java.network.packet.StatusRequestPacket
 import io.github.moltenmc.molten.java.network.packet.StatusResponsePacket
+import io.github.moltenmc.molten.java.network.packet.SystemChatPacket
 import io.github.moltenmc.molten.java.protocol.JavaProtocolState
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -187,5 +189,17 @@ class JavaPacketRegistriesTest {
 
         assertNotNull(entry)
         assertEquals(PlayDisconnectPacket::class, entry.packetClass)
+    }
+
+    @Test
+    fun protocol776RegistersClientboundSystemChat() {
+        val entry = JavaPacketRegistries.protocol776().find(
+            state = JavaProtocolState.PLAY,
+            direction = PacketDirection.CLIENTBOUND,
+            packetId = JavaSystemChatPacketCodec.PACKET_ID,
+        )
+
+        assertNotNull(entry)
+        assertEquals(SystemChatPacket::class, entry.packetClass)
     }
 }
