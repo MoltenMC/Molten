@@ -2,6 +2,7 @@ package io.github.moltenmc.molten.java.network.registry
 
 import io.github.moltenmc.molten.common.network.PacketDirection
 import io.github.moltenmc.molten.common.network.PacketFrequencyClass
+import io.github.moltenmc.molten.java.network.codec.JavaFinishConfigurationPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaHandshakePacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaLoginStartPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaLoginSuccessPacketCodec
@@ -9,6 +10,7 @@ import io.github.moltenmc.molten.java.network.codec.JavaStatusPingPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaStatusPongPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaStatusRequestPacketCodec
 import io.github.moltenmc.molten.java.network.codec.JavaStatusResponsePacketCodec
+import io.github.moltenmc.molten.java.network.packet.FinishConfigurationPacket
 import io.github.moltenmc.molten.java.network.packet.HandshakePacket
 import io.github.moltenmc.molten.java.network.packet.LoginStartPacket
 import io.github.moltenmc.molten.java.network.packet.LoginSuccessPacket
@@ -87,6 +89,16 @@ object JavaPacketRegistries {
                     packetClass = LoginSuccessPacket::class,
                     codec = JavaLoginSuccessPacketCodec(),
                     state = JavaProtocolState.LOGIN,
+                    direction = PacketDirection.CLIENTBOUND,
+                    frequencyClass = PacketFrequencyClass.LOW,
+                ),
+            )
+            register(
+                JavaPacketRegistryEntry(
+                    packetId = JavaFinishConfigurationPacketCodec.PACKET_ID,
+                    packetClass = FinishConfigurationPacket::class,
+                    codec = JavaFinishConfigurationPacketCodec(),
+                    state = JavaProtocolState.CONFIGURATION,
                     direction = PacketDirection.CLIENTBOUND,
                     frequencyClass = PacketFrequencyClass.LOW,
                 ),

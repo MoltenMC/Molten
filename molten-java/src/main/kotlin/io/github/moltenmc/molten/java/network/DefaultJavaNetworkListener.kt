@@ -63,8 +63,8 @@ class DefaultJavaNetworkListener(
                                 .addLast("java-handshake-state-handler", JavaHandshakeStateHandler(session))
                                 .addLast("java-status-request-handler", JavaStatusRequestHandler())
                                 .addLast("java-login-start-handler", JavaLoginStartHandler(session))
-                                .addLast("java-packet-encoder", JavaPacketEncoder(stateHolder = session))
                                 .addLast("java-varint-frame-encoder", JavaVarIntFrameEncoder())
+                                .addLast("java-packet-encoder", JavaPacketEncoder(stateHolder = session))
                         }
                     },
                 )
