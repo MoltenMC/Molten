@@ -2,7 +2,11 @@ package io.github.moltenmc.molten.java.network.registry
 
 import io.github.moltenmc.molten.common.network.PacketDirection
 import io.github.moltenmc.molten.java.network.codec.JavaHandshakePacketCodec
+import io.github.moltenmc.molten.java.network.codec.JavaStatusRequestPacketCodec
+import io.github.moltenmc.molten.java.network.codec.JavaStatusResponsePacketCodec
 import io.github.moltenmc.molten.java.network.packet.HandshakePacket
+import io.github.moltenmc.molten.java.network.packet.StatusRequestPacket
+import io.github.moltenmc.molten.java.network.packet.StatusResponsePacket
 import io.github.moltenmc.molten.java.protocol.JavaProtocolState
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -19,5 +23,29 @@ class JavaPacketRegistriesTest {
 
         assertNotNull(entry)
         assertEquals(HandshakePacket::class, entry.packetClass)
+    }
+
+    @Test
+    fun protocol776RegistersServerboundStatusRequest() {
+        val entry = JavaPacketRegistries.protocol776().find(
+            state = JavaProtocolState.STATUS,
+            direction = PacketDirection.SERVERBOUND,
+            packetId = JavaStatusRequestPacketCodec.PACKET_ID,
+        )
+
+        assertNotNull(entry)
+        assertEquals(StatusRequestPacket::class, entry.packetClass)
+    }
+
+    @Test
+    fun protocol776RegistersClientboundStatusResponse() {
+        val entry = JavaPacketRegistries.protocol776().find(
+            state = JavaProtocolState.STATUS,
+            direction = PacketDirection.CLIENTBOUND,
+            packetId = JavaStatusResponsePacketCodec.PACKET_ID,
+        )
+
+        assertNotNull(entry)
+        assertEquals(StatusResponsePacket::class, entry.packetClass)
     }
 }
