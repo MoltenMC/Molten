@@ -7,6 +7,7 @@ import io.github.moltenmc.molten.java.network.codec.JavaVarIntFrameEncoder
 import io.github.moltenmc.molten.java.network.handler.JavaConfigurationFinishHandler
 import io.github.moltenmc.molten.java.network.handler.JavaHandshakeStateHandler
 import io.github.moltenmc.molten.java.network.handler.JavaLoginStartHandler
+import io.github.moltenmc.molten.java.network.handler.JavaNetworkExceptionHandler
 import io.github.moltenmc.molten.java.network.handler.JavaStatusRequestHandler
 import io.github.moltenmc.molten.java.network.session.JavaSessionHolder
 import io.netty5.bootstrap.ServerBootstrap
@@ -67,6 +68,7 @@ class DefaultJavaNetworkListener(
                                 .addLast("java-configuration-finish-handler", JavaConfigurationFinishHandler(session))
                                 .addLast("java-varint-frame-encoder", JavaVarIntFrameEncoder())
                                 .addLast("java-packet-encoder", JavaPacketEncoder(stateHolder = session))
+                                .addLast("java-network-exception-handler", JavaNetworkExceptionHandler(session))
                         }
                     },
                 )
