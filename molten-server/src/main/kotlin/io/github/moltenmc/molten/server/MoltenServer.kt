@@ -69,6 +69,15 @@ class MoltenServer(
     companion object {
         fun create(
             configuration: ServerConfiguration,
+        ): MoltenServer =
+            create(
+                configuration = configuration,
+                runtimeDefinition = RuntimeDefinition.forMode(configuration.runtimeMode),
+                worldStoragePaths = WorldStoragePaths(configuration.worldDirectory),
+            )
+
+        fun create(
+            configuration: ServerConfiguration,
             runtimeDefinition: RuntimeDefinition,
             worldStoragePaths: WorldStoragePaths,
             tickTasks: Iterable<TickTask> = emptyList(),

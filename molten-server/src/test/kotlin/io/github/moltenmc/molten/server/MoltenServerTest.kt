@@ -34,6 +34,14 @@ import kotlin.test.assertTrue
 
 class MoltenServerTest {
     @Test
+    fun defaultConfigurationUsesJavaBasedRuntimeAndWorldDirectory() {
+        val configuration = ServerConfiguration.defaults()
+
+        assertEquals(RuntimeMode.JAVA_BASED, configuration.runtimeMode)
+        assertEquals(Path.of("world"), configuration.worldDirectory)
+    }
+
+    @Test
     fun startsTickLoopWhenServerStarts() {
         val tickLoop = ServerTickLoop(TickPipeline(emptyList()))
         val server = MoltenServer(
@@ -176,6 +184,26 @@ class MoltenServerTest {
 
                 assertTrue(latch.await(1, TimeUnit.SECONDS))
                 assertTrue(Files.isDirectory(paths.javaRegionDirectory))
+            } finally {
+                server.stop()
+            }
+        }
+    }
+
+    @Test
+    fun createsServerFromConfigurationRuntimeAndWorldDirectory() {
+        withTempDirectory { directory ->
+            val configuration = ServerConfiguration.defaults().copy(
+                tickRate = TickRate(100),
+                runtimeMode = RuntimeMode.JAVA_ONLY,
+                worldDirectory = directory,
+            )
+            val server = MoltenServer.create(configuration)
+
+            try {
+                server.start()
+
+                assertTrue(Files.isDirectory(directory.resolve("region")))
             } finally {
                 server.stop()
             }
