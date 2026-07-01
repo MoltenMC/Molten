@@ -4,8 +4,10 @@ import io.github.moltenmc.molten.common.world.ChunkPos
 import io.github.moltenmc.molten.common.world.chunk.Chunk
 import java.util.concurrent.CompletableFuture
 
-interface AnvilStorageAdapter {
+interface AnvilStorageAdapter : AutoCloseable {
     fun loadChunk(position: ChunkPos): CompletableFuture<Chunk?>
 
     fun saveChunk(chunk: Chunk): CompletableFuture<Void>
+
+    override fun close()
 }
