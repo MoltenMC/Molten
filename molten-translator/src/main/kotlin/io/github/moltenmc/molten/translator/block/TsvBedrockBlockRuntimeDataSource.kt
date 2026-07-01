@@ -22,8 +22,8 @@ class TsvBedrockBlockRuntimeDataSource(
         }
 
         val fields = trimmed.split('\t')
-        require(fields.size == FIELD_COUNT) {
-            "Invalid Bedrock runtime mapping at line ${index + 1}: expected $FIELD_COUNT tab-separated fields."
+        require(fields.size in MIN_FIELD_COUNT..MAX_FIELD_COUNT) {
+            "Invalid Bedrock runtime mapping at line ${index + 1}: expected $MIN_FIELD_COUNT or $MAX_FIELD_COUNT tab-separated fields."
         }
 
         val runtimeId = fields[0].toIntOrNull()
@@ -33,13 +33,32 @@ class TsvBedrockBlockRuntimeDataSource(
 
         return BedrockRuntimeBlockMapping(
             runtimeId = runtimeId,
-            internalState = BlockState(RegistryKey.parse(fields[1])),
+            internalState = BlockState(
+                key = RegistryKey.parse(fields[1]),
+                properties = fields.getOrNull(2)?.let { propertiesFromField(index, it) }.orEmpty(),
+            ),
         )
+    }
+
+    private fun propertiesFromField(index: Int, field: String): Map<String, String> {
+        if (field.isBlank()) {
+            return emptyMap()
+        }
+        return field.split(',')
+            .associate { entry ->
+                val separator = entry.indexOf('=')
+                require(separator > 0 && separator < entry.lastIndex) {
+                    "Invalid Bedrock block property at line ${index + 1}: $entry."
+                }
+                entry.substring(0, separator) to entry.substring(separator + 1)
+            }
+            .toSortedMap()
     }
 
     companion object {
         const val DEFAULT_RESOURCE = "/molten/translator/bedrock/block_runtime.tsv"
-        private const val FIELD_COUNT = 2
+        private const val MIN_FIELD_COUNT = 2
+        private const val MAX_FIELD_COUNT = 3
 
         fun bundled(): TsvBedrockBlockRuntimeDataSource =
             TsvBedrockBlockRuntimeDataSource {

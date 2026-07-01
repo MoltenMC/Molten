@@ -29,6 +29,26 @@ class BedrockProtocolModuleTest {
     }
 
     @Test
+    fun createsLevelDbMapperUsingBundledBiomeMappingsByDefault() {
+        val module = BedrockProtocolModule()
+        module.start()
+
+        val mapper = module.createLevelDbChunkMapper()
+        val position = ChunkPos(0, 0)
+        val data2dKey = BedrockChunkRecordKey.data2d(position).encode()
+        val data2dPayload = ByteArray(512 + 256) { index ->
+            if (index == 512) 4 else 1
+        }
+
+        val chunk = mapper.toChunk(position, mapOf(data2dKey to data2dPayload))
+
+        assertEquals(
+            RegistryKey.parse("minecraft:forest"),
+            chunk.sections.single().biomes.valueAt(0),
+        )
+    }
+
+    @Test
     fun createsLevelDbMapperUsingBootstrappedRuntimeMappings() {
         val stone = BlockState(RegistryKey.parse("minecraft:stone"))
         val module = BedrockProtocolModule(

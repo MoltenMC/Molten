@@ -148,8 +148,77 @@ class DefaultAnvilChunkMapperTest {
             chunk.sections.single().blocks.palette,
         )
         assertContentEquals(longArrayOf(0L, 1L), chunk.sections.single().blocks.packedData)
+        assertEquals(0, chunk.sections.single().blocks.bitsPerEntry)
+        assertEquals(Long.SIZE_BITS, chunk.sections.single().blocks.wordBits)
         assertEquals(listOf(RegistryKey.parse("minecraft:plains")), chunk.sections.single().biomes.palette)
         assertContentEquals(byteArrayOf(1, 2), chunk.sections.single().light.blockLight)
+    }
+
+    @Test
+    fun decodesJavaPalettedContainerBitMetadata() {
+        val stone = NbtValue.CompoundValue(mapOf("Name" to NbtValue.StringValue("minecraft:stone")))
+        val dirt = NbtValue.CompoundValue(mapOf("Name" to NbtValue.StringValue("minecraft:dirt")))
+        val raw = NbtCodec.encode(
+            NbtValue.CompoundValue(
+                mapOf(
+                    "sections" to NbtValue.ListValue(
+                        listOf(
+                            NbtValue.CompoundValue(
+                                mapOf(
+                                    "Y" to NbtValue.ByteValue(0),
+                                    "block_states" to NbtValue.CompoundValue(
+                                        mapOf(
+                                            "palette" to NbtValue.ListValue(listOf(stone, dirt)),
+                                            "data" to NbtValue.LongArrayValue(longArrayOf(16L)),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            NbtFormat.JAVA,
+            "",
+        )
+
+        val section = mapper.toChunk(ChunkPos(0, 0), raw).sections.single()
+
+        assertEquals(4, section.blocks.bitsPerEntry)
+        assertEquals(BlockState(RegistryKey.parse("minecraft:stone")), section.blocks.valueAt(0))
+        assertEquals(BlockState(RegistryKey.parse("minecraft:dirt")), section.blocks.valueAt(1))
+    }
+
+    @Test
+    fun fallsBackForEmptyJavaPalettes() {
+        val raw = NbtCodec.encode(
+            NbtValue.CompoundValue(
+                mapOf(
+                    "sections" to NbtValue.ListValue(
+                        listOf(
+                            NbtValue.CompoundValue(
+                                mapOf(
+                                    "Y" to NbtValue.ByteValue(0),
+                                    "block_states" to NbtValue.CompoundValue(
+                                        mapOf("palette" to NbtValue.ListValue(emptyList())),
+                                    ),
+                                    "biomes" to NbtValue.CompoundValue(
+                                        mapOf("palette" to NbtValue.ListValue(emptyList())),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            NbtFormat.JAVA,
+            "",
+        )
+
+        val section = mapper.toChunk(ChunkPos(0, 0), raw).sections.single()
+
+        assertEquals(BlockState(RegistryKey.parse("minecraft:air")), section.blocks.valueAt(0))
+        assertEquals(RegistryKey.parse("minecraft:plains"), section.biomes.valueAt(0))
     }
 
     @Test
@@ -296,5 +365,42 @@ class DefaultAnvilChunkMapperTest {
 
         assertEquals(NbtValue.StringValue("minecraft:stone"), blockPaletteEntry.values["Name"])
         assertEquals(false, blockPaletteEntry.values.containsKey("Properties"))
+    }
+
+    @Test
+    fun doesNotRestoreManagedRootDataFromRawDataWhenChunkStateIsEmpty() {
+        val raw = mapper.toRawChunkData(
+            Chunk(
+                position = ChunkPos(1, 2),
+                sections = emptyList(),
+                heightmaps = emptyMap(),
+                blockEntities = emptyList(),
+                rawData = mapOf(
+                    "Heightmaps" to NbtValue.CompoundValue(
+                        mapOf("MOTION_BLOCKING" to NbtValue.LongArrayValue(longArrayOf(1L))),
+                    ),
+                    "block_entities" to NbtValue.ListValue(
+                        listOf(
+                            NbtValue.CompoundValue(
+                                mapOf("id" to NbtValue.StringValue("minecraft:chest")),
+                            ),
+                        ),
+                    ),
+                    "sections" to NbtValue.ListValue(
+                        listOf(
+                            NbtValue.CompoundValue(mapOf("Y" to NbtValue.ByteValue(0))),
+                        ),
+                    ),
+                    "custom_root" to NbtValue.IntValue(42),
+                ),
+            ),
+        )
+
+        val decoded = NbtCodec.decode(raw, NbtFormat.JAVA)
+
+        assertEquals(false, decoded.values.containsKey("Heightmaps"))
+        assertEquals(false, decoded.values.containsKey("block_entities"))
+        assertEquals(NbtValue.ListValue(emptyList()), decoded.values["sections"])
+        assertEquals(NbtValue.IntValue(42), decoded.values["custom_root"])
     }
 }

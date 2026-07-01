@@ -1,5 +1,5 @@
-# runtime_id	internal_block_key
+# runtime_id	internal_block_key	properties
 0	minecraft:air
 1	minecraft:stone
-2	minecraft:grass_block
+2	minecraft:grass_block	snowy=false
 3	minecraft:dirt

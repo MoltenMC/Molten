@@ -84,20 +84,30 @@ class DefaultAnvilChunkMapper : AnvilChunkMapper {
             ),
         )
 
-    private fun blockPalettedContainerFromNbt(value: NbtValue.CompoundValue): PalettedContainer<BlockState> =
-        PalettedContainer(
-            palette = value.compoundList("palette")
-                .mapNotNull(::blockStateFromPaletteEntry),
+    private fun blockPalettedContainerFromNbt(value: NbtValue.CompoundValue): PalettedContainer<BlockState> {
+        val palette = value.compoundList("palette")
+            .mapNotNull(::blockStateFromPaletteEntry)
+            .ifEmpty { listOf(BlockState(AIR)) }
+        return PalettedContainer(
+            palette = palette,
             packedData = value.longArray("data"),
+            bitsPerEntry = bitsPerEntry(palette.size, minBits = 4),
+            wordBits = Long.SIZE_BITS,
         )
+    }
 
-    private fun registryPalettedContainerFromNbt(value: NbtValue.CompoundValue): PalettedContainer<RegistryKey> =
-        PalettedContainer(
-            palette = value.compoundList("palette")
-                .mapNotNull { it.string("Name") }
-                .map(RegistryKey::parse),
+    private fun registryPalettedContainerFromNbt(value: NbtValue.CompoundValue): PalettedContainer<RegistryKey> {
+        val palette = value.compoundList("palette")
+            .mapNotNull { it.string("Name") }
+            .map(RegistryKey::parse)
+            .ifEmpty { listOf(PLAINS) }
+        return PalettedContainer(
+            palette = palette,
             packedData = value.longArray("data"),
+            bitsPerEntry = bitsPerEntry(palette.size, minBits = 1),
+            wordBits = Long.SIZE_BITS,
         )
+    }
 
     private fun blockStateFromPaletteEntry(entry: NbtValue.CompoundValue): BlockState? {
         val name = entry.string("Name") ?: return null
@@ -183,6 +193,17 @@ class DefaultAnvilChunkMapper : AnvilChunkMapper {
 
     private fun NbtValue.CompoundValue.longArray(key: String): LongArray =
         (values[key] as? NbtValue.LongArrayValue)?.value ?: LongArray(0)
+
+    private fun bitsPerEntry(paletteSize: Int, minBits: Int): Int {
+        if (paletteSize <= 1) {
+            return 0
+        }
+        var bits = minBits
+        while ((1 shl bits) < paletteSize) {
+            bits++
+        }
+        return bits
+    }
 
     private fun emptyBlocks(): PalettedContainer<BlockState> =
         PalettedContainer(palette = listOf(BlockState(AIR)), packedData = LongArray(0))

@@ -1,6 +1,7 @@
 package io.github.moltenmc.molten.bedrock.world.leveldb
 
 import io.github.moltenmc.leveldb.LevelDB
+import io.github.moltenmc.leveldb.WriteBatch
 import io.github.moltenmc.molten.common.world.ChunkPos
 import io.github.moltenmc.molten.common.world.chunk.Chunk
 import java.nio.file.Path
@@ -10,8 +11,8 @@ import java.util.concurrent.ForkJoinPool
 
 class DefaultLevelDbStorageAdapter(
     databasePath: Path,
-    private val mapper: LevelDbChunkMapper = RawPreservingLevelDbChunkMapper(),
     private val dimension: Int = BedrockChunkRecordKey.OVERWORLD_DIMENSION,
+    private val mapper: LevelDbChunkMapper = RawPreservingLevelDbChunkMapper(dimension = dimension),
     private val ioExecutor: Executor = ForkJoinPool.commonPool(),
 ) : LevelDbStorageAdapter {
     private val database = LevelDB(databasePath)
@@ -33,7 +34,14 @@ class DefaultLevelDbStorageAdapter(
     override fun saveChunk(chunk: Chunk): CompletableFuture<Void> =
         CompletableFuture.runAsync(
             {
-                mapper.toRecords(chunk).forEach { (key, value) -> database.put(key, value) }
+                val records = mapper.toRecords(chunk)
+                val batch = WriteBatch()
+                collectChunkRecords(chunk.position)
+                    .keys
+                    .filterNot { existingKey -> records.keys.any(existingKey::contentEquals) }
+                    .forEach(batch::delete)
+                records.forEach { (key, value) -> batch.put(key, value) }
+                database.write(batch)
                 database.flush()
             },
             ioExecutor,

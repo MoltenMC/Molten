@@ -42,6 +42,7 @@ class BedrockChunkRecordKey(
 
     companion object {
         const val OVERWORLD_DIMENSION = 0
+        const val DATA_2D_TAG: Byte = 0x2d
         const val VERSION_TAG: Byte = 0x2c
         const val SUBCHUNK_TAG: Byte = 0x2f
         const val FINALIZED_STATE_TAG: Byte = 0x36
@@ -52,6 +53,12 @@ class BedrockChunkRecordKey(
 
         fun version(position: ChunkPos, dimension: Int = OVERWORLD_DIMENSION): BedrockChunkRecordKey =
             BedrockChunkRecordKey(position, dimension, VERSION_TAG)
+
+        fun data2d(position: ChunkPos, dimension: Int = OVERWORLD_DIMENSION): BedrockChunkRecordKey =
+            BedrockChunkRecordKey(position, dimension, DATA_2D_TAG)
+
+        fun finalizedState(position: ChunkPos, dimension: Int = OVERWORLD_DIMENSION): BedrockChunkRecordKey =
+            BedrockChunkRecordKey(position, dimension, FINALIZED_STATE_TAG)
 
         fun subChunk(
             position: ChunkPos,
@@ -66,10 +73,48 @@ class BedrockChunkRecordKey(
 
         fun subChunkY(key: ByteArray, dimension: Int = OVERWORLD_DIMENSION): Int? {
             val tagOffset = tagOffset(dimension)
-            if (key.size <= tagOffset + 1 || key[tagOffset] != SUBCHUNK_TAG) {
+            if (key.size <= tagOffset + 1 || !hasExpectedDimension(key, dimension) || key[tagOffset] != SUBCHUNK_TAG) {
                 return null
             }
             return key[tagOffset + 1].toInt()
+        }
+
+        fun isData2d(key: ByteArray, dimension: Int = OVERWORLD_DIMENSION): Boolean {
+            val tagOffset = tagOffset(dimension)
+            return key.size > tagOffset &&
+                key.size == tagOffset + 1 &&
+                hasExpectedDimension(key, dimension) &&
+                key[tagOffset] == DATA_2D_TAG
+        }
+
+        fun isVersion(key: ByteArray, dimension: Int = OVERWORLD_DIMENSION): Boolean {
+            val tagOffset = tagOffset(dimension)
+            return key.size > tagOffset &&
+                key.size == tagOffset + 1 &&
+                hasExpectedDimension(key, dimension) &&
+                key[tagOffset] == VERSION_TAG
+        }
+
+        fun isFinalizedState(key: ByteArray, dimension: Int = OVERWORLD_DIMENSION): Boolean {
+            val tagOffset = tagOffset(dimension)
+            return key.size > tagOffset &&
+                key.size == tagOffset + 1 &&
+                hasExpectedDimension(key, dimension) &&
+                key[tagOffset] == FINALIZED_STATE_TAG
+        }
+
+        private fun hasExpectedDimension(key: ByteArray, dimension: Int): Boolean {
+            if (dimension == OVERWORLD_DIMENSION) {
+                return true
+            }
+            if (key.size < DIMENSION_KEY_BYTES) {
+                return false
+            }
+            val encodedDimension = (key[8].toInt() and 0xff) or
+                ((key[9].toInt() and 0xff) shl 8) or
+                ((key[10].toInt() and 0xff) shl 16) or
+                ((key[11].toInt() and 0xff) shl 24)
+            return encodedDimension == dimension
         }
     }
 }

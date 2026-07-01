@@ -8,4 +8,5 @@ data class ChunkSection(
     val blocks: PalettedContainer<BlockState>,
     val biomes: PalettedContainer<RegistryKey>,
     val light: LightData,
+    val extraBlockLayers: List<PalettedContainer<BlockState>> = emptyList(),
 )
