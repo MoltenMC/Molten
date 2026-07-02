@@ -104,6 +104,52 @@ class MovementValidatorTest {
         assertTrue(result.isValid)
     }
 
+    @Test
+    fun rejectsExcessiveVerticalMovementWhenFlightDisabled() {
+        val validator = DefaultMovementValidator(allowFlight = false, maxVerticalSpeed = 3.0)
+        val currentTransform = TransformComponent(Vec3d(0.0, 64.0, 0.0))
+        val intent = moveIntent(0.0, 70.0, 0.0) // 6 blocks up
+        
+        val result = validator.validate(intent, currentTransform)
+        
+        assertFalse(result.isValid)
+        assertTrue(result.reason?.contains("vertical") == true)
+    }
+
+    @Test
+    fun allowsVerticalMovementWhenFlightEnabled() {
+        val validator = DefaultMovementValidator(allowFlight = true, maxVerticalSpeed = 3.0)
+        val currentTransform = TransformComponent(Vec3d(0.0, 64.0, 0.0))
+        val intent = moveIntent(0.0, 70.0, 0.0) // 6 blocks up
+        
+        val result = validator.validate(intent, currentTransform)
+        
+        assertTrue(result.isValid)
+    }
+
+    @Test
+    fun acceptsNormalVerticalMovement() {
+        val validator = DefaultMovementValidator(allowFlight = false, maxVerticalSpeed = 3.0)
+        val currentTransform = TransformComponent(Vec3d(0.0, 64.0, 0.0))
+        val intent = moveIntent(0.0, 66.0, 0.0) // 2 blocks up
+        
+        val result = validator.validate(intent, currentTransform)
+        
+        assertTrue(result.isValid)
+    }
+
+    @Test
+    fun rejectsDownwardFallingTooFast() {
+        val validator = DefaultMovementValidator(allowFlight = false, maxSpeed = 100.0, maxVerticalSpeed = 10.0)
+        val currentTransform = TransformComponent(Vec3d(0.0, 100.0, 0.0))
+        val intent = moveIntent(0.0, 50.0, 0.0) // 50 blocks down (too fast)
+        
+        val result = validator.validate(intent, currentTransform)
+        
+        assertFalse(result.isValid)
+        assertTrue(result.reason?.contains("vertical") == true)
+    }
+
     private fun moveIntent(x: Double, y: Double, z: Double): ServerIntent.PlayerMove =
         ServerIntent.PlayerMove(
             sourceEntityId = EntityId.of(1, generation = 0, EntityKind.PLAYER),

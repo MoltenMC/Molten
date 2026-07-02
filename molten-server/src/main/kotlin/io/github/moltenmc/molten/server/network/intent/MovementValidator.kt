@@ -32,6 +32,8 @@ data class ValidationResult(
 class DefaultMovementValidator(
     private val maxSpeed: Double = 10.0, // blocks per tick
     private val maxTeleportDistance: Double = 100.0, // blocks
+    private val allowFlight: Boolean = false,
+    private val maxVerticalSpeed: Double = 5.0, // blocks per tick
 ) : MovementValidator {
     override fun validate(
         intent: ServerIntent.PlayerMove,
@@ -60,13 +62,27 @@ class DefaultMovementValidator(
             )
         }
         
+        // Check for flying (if not allowed)
+        if (!allowFlight) {
+            val verticalSpeed = kotlin.math.abs(dy)
+            if (verticalSpeed > maxVerticalSpeed) {
+                return ValidationResult(
+                    isValid = false,
+                    reason = "Vertical speed $verticalSpeed exceeds maximum vertical speed $maxVerticalSpeed",
+                )
+            }
+            
+            // TODO: Check if player is on ground
+            // This requires ground detection component or world collision check
+            // For now, we only check excessive vertical movement
+        }
+        
         // TODO: Add more validation:
-        // - Check for flying (if not allowed)
-        // - Check for noclip (through blocks)
-        // - Check for sprinting speed limits
-        // - Check for elytra flight speed limits
-        // - Check for knockback effects
-        // - Check for vehicle movement
+        // - Check for noclip (through blocks) - requires world collision
+        // - Check for sprinting speed limits - requires sprint state
+        // - Check for elytra flight speed limits - requires equipment check
+        // - Check for knockback effects - requires velocity tracking
+        // - Check for vehicle movement - requires vehicle state
         
         return ValidationResult(isValid = true)
     }
