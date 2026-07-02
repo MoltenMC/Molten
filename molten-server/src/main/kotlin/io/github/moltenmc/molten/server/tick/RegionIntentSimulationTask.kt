@@ -1,12 +1,13 @@
 package io.github.moltenmc.molten.server.tick
 
+import io.github.moltenmc.molten.server.network.intent.NoopRegionIntentProcessor
 import io.github.moltenmc.molten.server.network.intent.RegionIntentInbox
 import io.github.moltenmc.molten.server.network.intent.RegionIntentProcessor
 import java.util.concurrent.CompletableFuture
 
 class RegionIntentSimulationTask(
     private val inbox: RegionIntentInbox,
-    private val processor: RegionIntentProcessor = RegionIntentProcessor.Noop,
+    private val processor: RegionIntentProcessor = NoopRegionIntentProcessor(),
 ) : TickTask {
     override val step: TickPipelineStep = TickPipelineStep.REGION_SIMULATION
 

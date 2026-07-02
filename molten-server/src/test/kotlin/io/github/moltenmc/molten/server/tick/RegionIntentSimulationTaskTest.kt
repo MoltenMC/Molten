@@ -9,6 +9,7 @@ import io.github.moltenmc.molten.common.world.WorldId
 import io.github.moltenmc.molten.server.network.intent.RegionIntentBatch
 import io.github.moltenmc.molten.server.network.intent.RegionIntentInbox
 import io.github.moltenmc.molten.server.network.intent.RegionIntentKey
+import io.github.moltenmc.molten.server.network.intent.RegionIntentProcessor
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -19,7 +20,12 @@ class RegionIntentSimulationTaskTest {
     fun drainsRegionIntentBatchesDuringRegionSimulationStep() {
         val inbox = RegionIntentInbox()
         val processed = mutableListOf<RegionIntentBatch>()
-        val task = RegionIntentSimulationTask(inbox, processed::add)
+        val processor = object : RegionIntentProcessor {
+            override fun process(batch: RegionIntentBatch) {
+                processed.add(batch)
+            }
+        }
+        val task = RegionIntentSimulationTask(inbox, processor)
         val firstKey = RegionIntentKey(WorldId(UUID(0, 1)), RegionPos(2, 3))
         val secondKey = RegionIntentKey(WorldId(UUID(0, 1)), RegionPos(4, 5))
         val first = chatIntent("first", firstKey)
@@ -45,7 +51,12 @@ class RegionIntentSimulationTaskTest {
     fun handlesEmptyInbox() {
         val inbox = RegionIntentInbox()
         val processed = mutableListOf<RegionIntentBatch>()
-        val task = RegionIntentSimulationTask(inbox, processed::add)
+        val processor = object : RegionIntentProcessor {
+            override fun process(batch: RegionIntentBatch) {
+                processed.add(batch)
+            }
+        }
+        val task = RegionIntentSimulationTask(inbox, processor)
 
         task.execute(currentTick = 1).get()
 
@@ -59,9 +70,12 @@ class RegionIntentSimulationTaskTest {
         val intent = chatIntent("test", key)
         inbox.accept(key.worldId, key.regionPos, intent)
 
-        val task = RegionIntentSimulationTask(inbox) {
-            throw RuntimeException("Processor error")
+        val processor = object : RegionIntentProcessor {
+            override fun process(batch: RegionIntentBatch) {
+                throw RuntimeException("Processor error")
+            }
         }
+        val task = RegionIntentSimulationTask(inbox, processor)
 
         val future = task.execute(currentTick = 1)
         val exception = future.handle { _, ex -> ex }.get()
@@ -78,7 +92,12 @@ class RegionIntentSimulationTaskTest {
         intents.forEach { inbox.accept(key.worldId, key.regionPos, it) }
 
         val processed = mutableListOf<RegionIntentBatch>()
-        val task = RegionIntentSimulationTask(inbox, processed::add)
+        val processor = object : RegionIntentProcessor {
+            override fun process(batch: RegionIntentBatch) {
+                processed.add(batch)
+            }
+        }
+        val task = RegionIntentSimulationTask(inbox, processor)
 
         task.execute(currentTick = 1).get()
 

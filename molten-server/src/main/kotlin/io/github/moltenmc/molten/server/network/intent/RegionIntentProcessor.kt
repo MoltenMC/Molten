@@ -1,11 +1,34 @@
 package io.github.moltenmc.molten.server.network.intent
 
-fun interface RegionIntentProcessor {
-    fun process(batch: RegionIntentBatch)
+import io.github.moltenmc.molten.common.ecs.command.EcsCommandBuffer
 
-    companion object {
-        // TODO: Replace with actual intent processor implementation
-        // This is temporary scaffolding until intent processing logic is implemented
-        val Noop: RegionIntentProcessor = RegionIntentProcessor { }
+/**
+ * Processes region intent batches using registered intent handlers.
+ */
+interface RegionIntentProcessor {
+    fun process(batch: RegionIntentBatch)
+}
+
+/**
+ * Default implementation of RegionIntentProcessor that uses registered intent handlers.
+ */
+class DefaultRegionIntentProcessor(
+    private val handlerRegistry: IntentHandlerRegistry,
+    private val commandBuffer: EcsCommandBuffer,
+) : RegionIntentProcessor {
+    override fun process(batch: RegionIntentBatch) {
+        val context = IntentHandlerContext(commandBuffer)
+        batch.intents.forEach { intent ->
+            handlerRegistry.handle(intent, context)
+        }
+    }
+}
+
+/**
+ * No-op implementation of RegionIntentProcessor for testing and scaffolding.
+ */
+class NoopRegionIntentProcessor : RegionIntentProcessor {
+    override fun process(batch: RegionIntentBatch) {
+        // No-op
     }
 }

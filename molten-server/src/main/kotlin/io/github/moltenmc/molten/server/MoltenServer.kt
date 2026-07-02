@@ -7,8 +7,14 @@ import io.github.moltenmc.molten.server.console.ServerLogger
 import io.github.moltenmc.molten.server.network.ProtocolListener
 import io.github.moltenmc.molten.server.network.ProtocolListenerFactory
 import io.github.moltenmc.molten.server.network.ServerIntentInbox
+import io.github.moltenmc.molten.server.network.intent.DefaultRegionIntentProcessor
+import io.github.moltenmc.molten.server.network.intent.IntentHandlerRegistry
+import io.github.moltenmc.molten.server.network.intent.PlayerMoveIntentHandler
 import io.github.moltenmc.molten.server.network.intent.RegionIntentInbox
+import io.github.moltenmc.molten.server.network.intent.RegionIntentProcessor
 import io.github.moltenmc.molten.server.network.intent.ServerIntentRouter
+import io.github.moltenmc.molten.common.ecs.command.EcsCommandBuffer
+import io.github.moltenmc.molten.common.network.intent.ServerIntent
 import io.github.moltenmc.molten.server.runtime.RuntimeDefinition
 import io.github.moltenmc.molten.server.tick.InMemoryTickMetricsObserver
 import io.github.moltenmc.molten.server.tick.ProtocolListenerTickTask
@@ -144,12 +150,22 @@ class MoltenServer(
             val worldRuntime = WorldStorageRuntimeFactory(worldStoragePaths).create(runtimeDefinition)
             val intentInbox = ServerIntentInbox()
             val regionIntentInbox = RegionIntentInbox()
+            
+            // Set up intent handler registry with handlers
+            val commandBuffer = EcsCommandBuffer()
+            val handlerRegistry = IntentHandlerRegistry().apply {
+                register(ServerIntent.PlayerMove::class.java, PlayerMoveIntentHandler())
+                // TODO: Add more intent handlers as they are implemented
+            }
+            
+            val regionIntentProcessor = DefaultRegionIntentProcessor(handlerRegistry, commandBuffer)
+            
             return create(
                 configuration = configuration,
                 worldChunks = worldRuntime.chunks,
                 tickTasks = listOf(
                     ServerIntentDispatchTask(intentInbox, ServerIntentRouter(regionIntentInbox)),
-                    RegionIntentSimulationTask(regionIntentInbox),
+                    RegionIntentSimulationTask(regionIntentInbox, regionIntentProcessor),
                 ) + tickTasks,
                 managedResources = listOf(worldRuntime),
                 logger = logger,
