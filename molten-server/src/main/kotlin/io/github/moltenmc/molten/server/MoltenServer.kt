@@ -9,6 +9,7 @@ import io.github.moltenmc.molten.server.network.ProtocolListenerFactory
 import io.github.moltenmc.molten.server.network.ServerIntentInbox
 import io.github.moltenmc.molten.server.network.intent.DefaultRegionIntentProcessor
 import io.github.moltenmc.molten.server.network.intent.IntentHandlerRegistry
+import io.github.moltenmc.molten.server.network.intent.PlayerChatIntentHandler
 import io.github.moltenmc.molten.server.network.intent.PlayerMoveIntentHandler
 import io.github.moltenmc.molten.server.network.intent.RegionIntentInbox
 import io.github.moltenmc.molten.server.network.intent.RegionIntentProcessor
@@ -155,6 +156,7 @@ class MoltenServer(
             val commandBuffer = EcsCommandBuffer()
             val handlerRegistry = IntentHandlerRegistry().apply {
                 register(ServerIntent.PlayerMove::class.java, PlayerMoveIntentHandler())
+                register(ServerIntent.PlayerChat::class.java, PlayerChatIntentHandler())
                 // TODO: Add more intent handlers as they are implemented
             }
             
