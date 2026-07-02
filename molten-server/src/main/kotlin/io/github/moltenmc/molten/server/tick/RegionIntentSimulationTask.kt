@@ -11,8 +11,16 @@ class RegionIntentSimulationTask(
     override val step: TickPipelineStep = TickPipelineStep.REGION_SIMULATION
 
     override fun execute(currentTick: Long): CompletableFuture<Unit> {
-        drainAndProcess()
-        return CompletableFuture.completedFuture(Unit)
+        return try {
+            val processedCount = drainAndProcess()
+            if (processedCount > 0) {
+                // TODO: Publish to metrics observer when available
+                // For now, this count is available for debugging and future observability
+            }
+            CompletableFuture.completedFuture(Unit)
+        } catch (error: Throwable) {
+            CompletableFuture.failedFuture(error)
+        }
     }
 
     fun drainAndProcess(): Int {

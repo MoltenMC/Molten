@@ -28,6 +28,15 @@ class RegionIntentInbox : RegionIntentSink {
         return drained
     }
 
+    /**
+     * Drains all region intent queues and returns non-empty batches.
+     *
+     * Note: This method takes a snapshot of the queue keys before draining.
+     * If new queues are added between the snapshot and drain() calls, those
+     * intents may not be included in the current batch. This is acceptable for
+     * the current use case where intents are processed every tick, as missed
+     * intents will be processed in the next tick.
+     */
     fun drainAll(): List<RegionIntentBatch> =
         queues.keys.mapNotNull { key ->
             val intents = drain(key)

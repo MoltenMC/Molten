@@ -12,6 +12,7 @@ import io.github.moltenmc.molten.server.network.intent.RegionIntentKey
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class RegionIntentSimulationTaskTest {
     @Test
@@ -38,6 +39,68 @@ class RegionIntentSimulationTaskTest {
         )
         assertEquals(0, inbox.size(firstKey))
         assertEquals(0, inbox.size(secondKey))
+    }
+
+    @Test
+    fun handlesEmptyInbox() {
+        val inbox = RegionIntentInbox()
+        val processed = mutableListOf<RegionIntentBatch>()
+        val task = RegionIntentSimulationTask(inbox, processed::add)
+
+        task.execute(currentTick = 1).get()
+
+        assertTrue(processed.isEmpty())
+    }
+
+    @Test
+    fun handlesProcessorException() {
+        val inbox = RegionIntentInbox()
+        val key = RegionIntentKey(WorldId(UUID(0, 1)), RegionPos(2, 3))
+        val intent = chatIntent("test", key)
+        inbox.accept(key.worldId, key.regionPos, intent)
+
+        val task = RegionIntentSimulationTask(inbox) {
+            throw RuntimeException("Processor error")
+        }
+
+        val future = task.execute(currentTick = 1)
+        val exception = future.handle { _, ex -> ex }.get()
+
+        assertTrue(exception is RuntimeException)
+        assertEquals("Processor error", exception.message)
+    }
+
+    @Test
+    fun handlesLargeBatch() {
+        val inbox = RegionIntentInbox()
+        val key = RegionIntentKey(WorldId(UUID(0, 1)), RegionPos(2, 3))
+        val intents = (1..1000).map { i -> chatIntent("message$i", key) }
+        intents.forEach { inbox.accept(key.worldId, key.regionPos, it) }
+
+        val processed = mutableListOf<RegionIntentBatch>()
+        val task = RegionIntentSimulationTask(inbox, processed::add)
+
+        task.execute(currentTick = 1).get()
+
+        assertEquals(1, processed.size)
+        assertEquals(1000, processed[0].intents.size)
+        assertEquals(0, inbox.size(key))
+    }
+
+    @Test
+    fun returnsProcessedIntentCount() {
+        val inbox = RegionIntentInbox()
+        val firstKey = RegionIntentKey(WorldId(UUID(0, 1)), RegionPos(2, 3))
+        val secondKey = RegionIntentKey(WorldId(UUID(0, 1)), RegionPos(4, 5))
+        inbox.accept(firstKey.worldId, firstKey.regionPos, chatIntent("first", firstKey))
+        inbox.accept(secondKey.worldId, secondKey.regionPos, chatIntent("second", secondKey))
+        inbox.accept(firstKey.worldId, firstKey.regionPos, chatIntent("third", firstKey))
+
+        val task = RegionIntentSimulationTask(inbox)
+
+        val count = task.drainAndProcess()
+
+        assertEquals(3, count)
     }
 
     private fun chatIntent(message: String, key: RegionIntentKey): ServerIntent.PlayerChat =
