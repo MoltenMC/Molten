@@ -1,5 +1,6 @@
 package io.github.moltenmc.molten.java.network
 
+import io.github.moltenmc.molten.common.network.intent.ServerIntentSink
 import io.github.moltenmc.molten.java.network.codec.JavaPacketDecoder
 import io.github.moltenmc.molten.java.network.codec.JavaPacketEncoder
 import io.github.moltenmc.molten.java.network.codec.JavaVarIntFrameDecoder
@@ -31,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class DefaultJavaNetworkListener(
     private val bindTimeoutSeconds: Long = 10,
     private val tickRegistry: JavaSessionTickRegistry = JavaSessionTickRegistry(),
+    private val intentSink: ServerIntentSink = ServerIntentSink.Noop,
 ) : JavaNetworkListener {
     private val boundRef = AtomicBoolean(false)
 
@@ -121,7 +123,7 @@ class DefaultJavaNetworkListener(
         session: JavaSessionHolder = JavaSessionHolder(),
     ) {
         val outboundFlushHandler = JavaOutboundFlushHandler(session)
-        val sessionTickHandler = JavaSessionTickHandler(outboundFlushHandler)
+        val sessionTickHandler = JavaSessionTickHandler(outboundFlushHandler, session, intentSink)
         channel.pipeline()
             .addLast("java-varint-frame-decoder", JavaVarIntFrameDecoder())
             .addLast("java-packet-decoder", JavaPacketDecoder(stateHolder = session))

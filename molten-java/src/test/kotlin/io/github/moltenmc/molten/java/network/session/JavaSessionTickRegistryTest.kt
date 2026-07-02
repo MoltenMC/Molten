@@ -54,7 +54,7 @@ class JavaSessionTickRegistryTest {
     private fun registeredSession(registry: JavaSessionTickRegistry, message: String): RegisteredSession {
         val sessionHolder = JavaSessionHolder(JavaProtocolState.PLAY)
         val flushHandler = JavaOutboundFlushHandler(sessionHolder)
-        val tickHandler = JavaSessionTickHandler(flushHandler)
+        val tickHandler = JavaSessionTickHandler(flushHandler, sessionHolder)
         val channel = EmbeddedChannel(flushHandler, tickHandler)
         sessionHolder.outboundQueue.enqueue(OutboundMessage.System(TextComponent(message)))
         val registration = registry.register(tickHandler, channel.pipeline().context(tickHandler))

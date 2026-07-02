@@ -7,12 +7,14 @@ class JavaInboundIntentQueue {
     private val intents = ArrayDeque<ServerIntent>()
 
     val size: Int
-        get() = intents.size
+        @Synchronized get() = intents.size
 
+    @Synchronized
     fun enqueue(intent: ServerIntent) {
         intents.addLast(intent)
     }
 
+    @Synchronized
     fun drain(): List<ServerIntent> {
         val drained = ArrayList<ServerIntent>(intents.size)
         while (intents.isNotEmpty()) {
