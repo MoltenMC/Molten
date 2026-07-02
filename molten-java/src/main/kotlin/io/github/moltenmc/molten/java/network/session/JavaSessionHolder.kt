@@ -7,4 +7,6 @@ class JavaSessionHolder(
 ) : JavaProtocolStateHolder(initialState) {
     @Volatile
     var profile: JavaSessionProfile? = null
+
+    val outboundQueue: JavaOutboundQueue = JavaOutboundQueue()
 }
