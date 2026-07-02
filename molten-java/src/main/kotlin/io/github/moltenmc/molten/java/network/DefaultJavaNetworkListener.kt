@@ -9,6 +9,7 @@ import io.github.moltenmc.molten.java.network.handler.JavaHandshakeStateHandler
 import io.github.moltenmc.molten.java.network.handler.JavaLoginStartHandler
 import io.github.moltenmc.molten.java.network.handler.JavaNetworkExceptionHandler
 import io.github.moltenmc.molten.java.network.handler.JavaOutboundFlushHandler
+import io.github.moltenmc.molten.java.network.handler.JavaSessionTickHandler
 import io.github.moltenmc.molten.java.network.handler.JavaStatusRequestHandler
 import io.github.moltenmc.molten.java.network.session.JavaSessionHolder
 import io.netty5.bootstrap.ServerBootstrap
@@ -60,6 +61,7 @@ class DefaultJavaNetworkListener(
                     object : ChannelInitializer<SocketChannel>() {
                         override fun initChannel(channel: SocketChannel) {
                             val session = JavaSessionHolder()
+                            val outboundFlushHandler = JavaOutboundFlushHandler(session)
                             channel.pipeline()
                                 .addLast("java-varint-frame-decoder", JavaVarIntFrameDecoder())
                                 .addLast("java-packet-decoder", JavaPacketDecoder(stateHolder = session))
@@ -67,7 +69,8 @@ class DefaultJavaNetworkListener(
                                 .addLast("java-status-request-handler", JavaStatusRequestHandler())
                                 .addLast("java-login-start-handler", JavaLoginStartHandler(session))
                                 .addLast("java-configuration-finish-handler", JavaConfigurationFinishHandler(session))
-                                .addLast("java-outbound-flush-handler", JavaOutboundFlushHandler(session))
+                                .addLast("java-outbound-flush-handler", outboundFlushHandler)
+                                .addLast("java-session-tick-handler", JavaSessionTickHandler(outboundFlushHandler))
                                 .addLast("java-varint-frame-encoder", JavaVarIntFrameEncoder())
                                 .addLast("java-packet-encoder", JavaPacketEncoder(stateHolder = session))
                                 .addLast("java-network-exception-handler", JavaNetworkExceptionHandler(session))
