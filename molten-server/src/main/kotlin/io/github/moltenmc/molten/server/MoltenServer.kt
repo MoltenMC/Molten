@@ -7,6 +7,7 @@ import io.github.moltenmc.molten.server.console.ServerLogger
 import io.github.moltenmc.molten.server.network.ProtocolListener
 import io.github.moltenmc.molten.server.network.ProtocolListenerFactory
 import io.github.moltenmc.molten.server.network.ServerIntentInbox
+import io.github.moltenmc.molten.server.network.intent.ServerIntentRouter
 import io.github.moltenmc.molten.server.runtime.RuntimeDefinition
 import io.github.moltenmc.molten.server.tick.InMemoryTickMetricsObserver
 import io.github.moltenmc.molten.server.tick.ProtocolListenerTickTask
@@ -143,7 +144,7 @@ class MoltenServer(
             return create(
                 configuration = configuration,
                 worldChunks = worldRuntime.chunks,
-                tickTasks = listOf(ServerIntentDispatchTask(intentInbox)) + tickTasks,
+                tickTasks = listOf(ServerIntentDispatchTask(intentInbox, ServerIntentRouter())) + tickTasks,
                 managedResources = listOf(worldRuntime),
                 logger = logger,
                 startupSummary = ServerStartupSummary.from(configuration, worldRuntime.storageKind),
