@@ -10,6 +10,8 @@ interface ProtocolListener : AutoCloseable {
 
     fun start()
 
+    fun tick(): Int = 0
+
     fun stop()
 
     override fun close() {

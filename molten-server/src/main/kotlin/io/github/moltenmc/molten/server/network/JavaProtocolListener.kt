@@ -38,6 +38,13 @@ class JavaProtocolListener(
         }
     }
 
+    override fun tick(): Int =
+        if (isRunning) {
+            delegate?.tickSessions() ?: 0
+        } else {
+            0
+        }
+
     private fun InetSocketAddress.formatEndpoint(): String =
         "${hostString}:${port}"
 }

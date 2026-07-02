@@ -66,9 +66,28 @@ class ProtocolListenerTest {
         assertEquals(1, delegate.closeCalls)
     }
 
+    @Test
+    fun javaListenerTicksDelegateOnlyWhenRunning() {
+        val delegate = RecordingJavaNetworkListener()
+        val listener = JavaProtocolListener(ServerConfiguration.defaults(), delegate)
+
+        assertEquals(0, listener.tick())
+
+        listener.start()
+
+        assertEquals(3, listener.tick())
+        assertEquals(1, delegate.tickSessionCalls)
+
+        listener.stop()
+
+        assertEquals(0, listener.tick())
+        assertEquals(1, delegate.tickSessionCalls)
+    }
+
     private class RecordingJavaNetworkListener : JavaNetworkListener {
         val binds = mutableListOf<Pair<String, Int>>()
         var closeCalls: Int = 0
+        var tickSessionCalls: Int = 0
 
         override var localAddress: InetSocketAddress? = null
             private set
@@ -78,7 +97,10 @@ class ProtocolListenerTest {
             localAddress = InetSocketAddress(host, port)
         }
 
-        override fun tickSessions(): Int = 0
+        override fun tickSessions(): Int {
+            tickSessionCalls++
+            return 3
+        }
 
         override fun close() {
             closeCalls++

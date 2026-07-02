@@ -8,6 +8,7 @@ import io.github.moltenmc.molten.server.network.ProtocolListener
 import io.github.moltenmc.molten.server.network.ProtocolListenerFactory
 import io.github.moltenmc.molten.server.runtime.RuntimeDefinition
 import io.github.moltenmc.molten.server.tick.InMemoryTickMetricsObserver
+import io.github.moltenmc.molten.server.tick.ProtocolListenerTickTask
 import io.github.moltenmc.molten.server.tick.ServerTickLoop
 import io.github.moltenmc.molten.server.tick.ServerTickResult
 import io.github.moltenmc.molten.server.tick.TickPipeline
@@ -157,7 +158,7 @@ class MoltenServer(
         ): MoltenServer =
             create(
                 configuration = configuration,
-                tickPipeline = TickPipeline(defaultTickTasks(worldChunks, tickTasks)),
+                tickPipeline = TickPipeline(defaultTickTasks(worldChunks, tickTasks, protocolListeners)),
                 managedResources = managedResources,
                 logger = logger,
                 startupSummary = startupSummary,
@@ -191,10 +192,14 @@ class MoltenServer(
         private fun defaultTickTasks(
             worldChunks: WorldChunkService?,
             tickTasks: Iterable<TickTask>,
+            protocolListeners: List<ProtocolListener>,
         ): List<TickTask> =
             buildList {
                 if (worldChunks != null) {
                     add(WorldChunkTickTask(worldChunks))
+                }
+                if (protocolListeners.isNotEmpty()) {
+                    add(ProtocolListenerTickTask(protocolListeners))
                 }
                 addAll(tickTasks)
             }
