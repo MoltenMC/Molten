@@ -83,8 +83,14 @@ class DefaultJavaNetworkListener(
         }
     }
 
+    override fun tickIngressSessions(): Int =
+        tickRegistry.tickIngressAll()
+
+    override fun tickEgressSessions(): Int =
+        tickRegistry.tickEgressAll()
+
     override fun tickSessions(): Int =
-        tickRegistry.tickAll()
+        tickEgressSessions()
 
     override fun close() {
         if (!boundRef.compareAndSet(true, false)) {

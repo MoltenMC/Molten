@@ -1,5 +1,9 @@
 package io.github.moltenmc.molten.java.network
 
+import io.github.moltenmc.molten.common.ecs.EntityId
+import io.github.moltenmc.molten.common.ecs.EntityKind
+import io.github.moltenmc.molten.common.network.IntentRouting
+import io.github.moltenmc.molten.common.network.intent.ServerIntent
 import io.github.moltenmc.molten.common.network.message.OutboundMessage
 import io.github.moltenmc.molten.common.text.TextComponent
 import io.github.moltenmc.molten.java.network.session.JavaSessionHolder
@@ -87,6 +91,27 @@ class DefaultJavaNetworkListenerTest {
     }
 
     @Test
+    fun tickIngressSessionsDrainsInboundIntentsWithoutFlushingOutboundQueue() {
+        val accepted = mutableListOf<ServerIntent>()
+        val listener = DefaultJavaNetworkListener(intentSink = accepted::add)
+        val sessionHolder = JavaSessionHolder(JavaProtocolState.PLAY)
+        val channel = EmbeddedChannel()
+        val intent = chatIntent("hello")
+        listener.initializeChannel(channel, sessionHolder)
+        sessionHolder.inboundIntentQueue.enqueue(intent)
+        sessionHolder.outboundQueue.enqueue(OutboundMessage.System(TextComponent("Hello")))
+
+        val drained = listener.tickIngressSessions()
+
+        assertEquals(1, drained)
+        val expected: List<ServerIntent> = listOf(intent)
+        assertEquals(expected, accepted)
+        assertEquals(0, sessionHolder.inboundIntentQueue.size)
+        assertEquals(1, sessionHolder.outboundQueue.size)
+        assertEquals(null, channel.readOutbound<Any>())
+    }
+
+    @Test
     fun tickSessionsLeavesNonPlayQueue() {
         val listener = DefaultJavaNetworkListener()
         val sessionHolder = JavaSessionHolder(JavaProtocolState.LOGIN)
@@ -114,4 +139,11 @@ class DefaultJavaNetworkListenerTest {
         assertEquals(0, listener.tickSessions())
         assertNotEquals(0, sessionHolder.outboundQueue.size)
     }
+
+    private fun chatIntent(message: String): ServerIntent.PlayerChat =
+        ServerIntent.PlayerChat(
+            sourceEntityId = EntityId.of(1, generation = 0, EntityKind.PLAYER),
+            routing = IntentRouting(worldId = null, regionPos = null),
+            message = message,
+        )
 }

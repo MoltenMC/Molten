@@ -14,6 +14,7 @@ import io.github.moltenmc.molten.server.tick.ServerTickLoop
 import io.github.moltenmc.molten.server.tick.ServerTickResult
 import io.github.moltenmc.molten.server.tick.ServerIntentDispatchTask
 import io.github.moltenmc.molten.server.tick.TickPipeline
+import io.github.moltenmc.molten.server.tick.TickPipelineStep
 import io.github.moltenmc.molten.server.tick.TickTask
 import io.github.moltenmc.molten.server.tick.TickMetricsSnapshot
 import io.github.moltenmc.molten.server.tick.WorldChunkTickTask
@@ -202,6 +203,13 @@ class MoltenServer(
                     add(WorldChunkTickTask(worldChunks))
                 }
                 if (protocolListeners.isNotEmpty()) {
+                    add(
+                        ProtocolListenerTickTask(
+                            listeners = protocolListeners,
+                            step = TickPipelineStep.NETWORK_INGRESS,
+                            tickListener = ProtocolListener::tickIngress,
+                        ),
+                    )
                     add(ProtocolListenerTickTask(protocolListeners))
                 }
                 addAll(tickTasks)

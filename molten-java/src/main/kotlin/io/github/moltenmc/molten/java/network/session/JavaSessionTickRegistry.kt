@@ -18,10 +18,23 @@ class JavaSessionTickRegistry {
         }
     }
 
+    fun tickIngressAll(): Int =
+        tickOpenEntries { entry ->
+            entry.handler.tickIngress()
+        }
+
+    fun tickEgressAll(): Int =
+        tickOpenEntries { entry ->
+            entry.handler.tickEgress(entry.context)
+        }
+
     fun tickAll(): Int =
+        tickEgressAll()
+
+    private fun tickOpenEntries(tickEntry: (Entry) -> Int): Int =
         entries.sumOf { entry ->
             if (entry.context.channel().isOpen) {
-                entry.handler.tick(entry.context)
+                tickEntry(entry)
             } else {
                 entries -= entry
                 0

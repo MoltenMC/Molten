@@ -7,7 +7,11 @@ interface JavaNetworkListener {
 
     fun bind(host: String, port: Int)
 
-    fun tickSessions(): Int
+    fun tickIngressSessions(): Int = 0
+
+    fun tickEgressSessions(): Int = tickSessions()
+
+    fun tickSessions(): Int = 0
 
     fun close()
 }

@@ -7,7 +7,7 @@ import kotlin.test.assertEquals
 
 class ProtocolListenerTickTaskTest {
     @Test
-    fun executesNetworkEgressStepAndTicksListeners() {
+    fun executesNetworkEgressStepAndTicksListenerEgress() {
         val first = RecordingProtocolListener()
         val second = RecordingProtocolListener()
         val task = ProtocolListenerTickTask(listOf(first, second))
@@ -15,20 +15,43 @@ class ProtocolListenerTickTaskTest {
         task.execute(currentTick = 7).get()
 
         assertEquals(TickPipelineStep.NETWORK_EGRESS, task.step)
-        assertEquals(1, first.tickCalls)
-        assertEquals(1, second.tickCalls)
+        assertEquals(1, first.egressTickCalls)
+        assertEquals(1, second.egressTickCalls)
+        assertEquals(0, first.ingressTickCalls)
+    }
+
+    @Test
+    fun executesNetworkIngressStepAndTicksListenerIngress() {
+        val listener = RecordingProtocolListener()
+        val task = ProtocolListenerTickTask(
+            listeners = listOf(listener),
+            step = TickPipelineStep.NETWORK_INGRESS,
+            tickListener = ProtocolListener::tickIngress,
+        )
+
+        task.execute(currentTick = 7).get()
+
+        assertEquals(TickPipelineStep.NETWORK_INGRESS, task.step)
+        assertEquals(1, listener.ingressTickCalls)
+        assertEquals(0, listener.egressTickCalls)
     }
 
     private class RecordingProtocolListener : ProtocolListener {
-        var tickCalls: Int = 0
+        var ingressTickCalls: Int = 0
+        var egressTickCalls: Int = 0
 
         override val protocol: ProtocolStack = ProtocolStack.JAVA_EDITION
         override val isRunning: Boolean = true
 
         override fun start() = Unit
 
-        override fun tick(): Int {
-            tickCalls++
+        override fun tickIngress(): Int {
+            ingressTickCalls++
+            return 1
+        }
+
+        override fun tickEgress(): Int {
+            egressTickCalls++
             return 1
         }
 

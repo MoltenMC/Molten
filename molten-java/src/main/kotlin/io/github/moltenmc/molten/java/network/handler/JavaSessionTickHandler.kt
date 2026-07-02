@@ -11,13 +11,16 @@ class JavaSessionTickHandler(
     private val intentSink: ServerIntentSink = ServerIntentSink.Noop,
 ) : ChannelHandlerAdapter() {
     fun tick(ctx: ChannelHandlerContext): Int {
-        drainInboundIntents()
-        return outboundFlushHandler.flushQueuedMessages(ctx)
+        val drained = tickIngress()
+        return drained + tickEgress(ctx)
     }
 
-    fun drainInboundIntents(): Int {
+    fun tickIngress(): Int {
         val intents = sessionHolder.inboundIntentQueue.drain()
         intentSink.acceptAll(intents)
         return intents.size
     }
+
+    fun tickEgress(ctx: ChannelHandlerContext): Int =
+        outboundFlushHandler.flushQueuedMessages(ctx)
 }

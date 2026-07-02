@@ -38,9 +38,16 @@ class JavaProtocolListener(
         }
     }
 
-    override fun tick(): Int =
+    override fun tickIngress(): Int =
         if (isRunning) {
-            delegate?.tickSessions() ?: 0
+            delegate?.tickIngressSessions() ?: 0
+        } else {
+            0
+        }
+
+    override fun tickEgress(): Int =
+        if (isRunning) {
+            delegate?.tickEgressSessions() ?: 0
         } else {
             0
         }

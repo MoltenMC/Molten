@@ -72,22 +72,29 @@ class ProtocolListenerTest {
         val listener = JavaProtocolListener(ServerConfiguration.defaults(), delegate)
 
         assertEquals(0, listener.tick())
+        assertEquals(0, listener.tickIngress())
 
         listener.start()
 
+        assertEquals(2, listener.tickIngress())
+        assertEquals(3, listener.tickEgress())
         assertEquals(3, listener.tick())
-        assertEquals(1, delegate.tickSessionCalls)
+        assertEquals(1, delegate.tickIngressSessionCalls)
+        assertEquals(2, delegate.tickEgressSessionCalls)
 
         listener.stop()
 
         assertEquals(0, listener.tick())
-        assertEquals(1, delegate.tickSessionCalls)
+        assertEquals(0, listener.tickIngress())
+        assertEquals(1, delegate.tickIngressSessionCalls)
+        assertEquals(2, delegate.tickEgressSessionCalls)
     }
 
     private class RecordingJavaNetworkListener : JavaNetworkListener {
         val binds = mutableListOf<Pair<String, Int>>()
         var closeCalls: Int = 0
-        var tickSessionCalls: Int = 0
+        var tickIngressSessionCalls: Int = 0
+        var tickEgressSessionCalls: Int = 0
 
         override var localAddress: InetSocketAddress? = null
             private set
@@ -97,8 +104,13 @@ class ProtocolListenerTest {
             localAddress = InetSocketAddress(host, port)
         }
 
-        override fun tickSessions(): Int {
-            tickSessionCalls++
+        override fun tickIngressSessions(): Int {
+            tickIngressSessionCalls++
+            return 2
+        }
+
+        override fun tickEgressSessions(): Int {
+            tickEgressSessionCalls++
             return 3
         }
 

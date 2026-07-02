@@ -47,17 +47,16 @@ class JavaSessionTickHandlerTest {
     }
 
     @Test
-    fun tickDrainsInboundIntentsIntoSinkBeforeOutboundFlush() {
+    fun ingressTickDrainsInboundIntentsIntoSink() {
         val sessionHolder = JavaSessionHolder(JavaProtocolState.PLAY)
         val flushHandler = JavaOutboundFlushHandler(sessionHolder)
         val accepted = mutableListOf<ServerIntent>()
         val tickHandler = JavaSessionTickHandler(flushHandler, sessionHolder, accepted::add)
-        val channel = EmbeddedChannel(flushHandler, tickHandler)
         sessionHolder.inboundIntentQueue.enqueue(chatIntent("hello"))
 
-        val written = tickHandler.tick(channel.pipeline().context(tickHandler))
+        val drained = tickHandler.tickIngress()
 
-        assertEquals(0, written)
+        assertEquals(1, drained)
         val expected: List<ServerIntent> = listOf(chatIntent("hello"))
         assertEquals(expected, accepted)
         assertEquals(0, sessionHolder.inboundIntentQueue.size)

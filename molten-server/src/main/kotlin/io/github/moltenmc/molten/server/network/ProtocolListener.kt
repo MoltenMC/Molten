@@ -10,7 +10,11 @@ interface ProtocolListener : AutoCloseable {
 
     fun start()
 
-    fun tick(): Int = 0
+    fun tickIngress(): Int = 0
+
+    fun tickEgress(): Int = 0
+
+    fun tick(): Int = tickEgress()
 
     fun stop()
 
