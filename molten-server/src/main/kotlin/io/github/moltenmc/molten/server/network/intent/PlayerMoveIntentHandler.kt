@@ -6,11 +6,30 @@ import io.github.moltenmc.molten.common.math.Vec3d
 import io.github.moltenmc.molten.common.network.intent.ServerIntent
 
 /**
- * Handles PlayerMove intents by updating the entity's transform component.
+ * Handles PlayerMove intents by validating movement and updating the entity's transform component.
  */
-class PlayerMoveIntentHandler : IntentHandler<ServerIntent.PlayerMove> {
+class PlayerMoveIntentHandler(
+    private val movementValidator: MovementValidator = DefaultMovementValidator(),
+) : IntentHandler<ServerIntent.PlayerMove> {
     override fun handle(intent: ServerIntent.PlayerMove, context: IntentHandlerContext) {
-        // TODO: Add movement validation before updating position
+        // Validate movement if component reader is available
+        val componentReader = context.componentReader
+        if (componentReader != null) {
+            val currentTransform = componentReader.getComponent(
+                intent.sourceEntityId,
+                TransformComponent::class.java,
+            ) as? TransformComponent
+            
+            if (currentTransform != null) {
+                val validationResult = movementValidator.validate(intent, currentTransform)
+                if (!validationResult.isValid) {
+                    // TODO: Log invalid movement attempt
+                    // TODO: Kick player for cheating if repeated violations
+                    return
+                }
+            }
+        }
+        
         // TODO: Check if movement crosses region boundaries and trigger migration
         // TODO: Update chunk view distance based on new position
 

@@ -15,9 +15,10 @@ interface RegionIntentProcessor {
 class DefaultRegionIntentProcessor(
     private val handlerRegistry: IntentHandlerRegistry,
     private val commandBuffer: EcsCommandBuffer,
+    private val componentReader: ComponentReader? = null,
 ) : RegionIntentProcessor {
     override fun process(batch: RegionIntentBatch) {
-        val context = IntentHandlerContext(commandBuffer)
+        val context = IntentHandlerContext(commandBuffer, componentReader)
         batch.intents.forEach { intent ->
             handlerRegistry.handle(intent, context)
         }

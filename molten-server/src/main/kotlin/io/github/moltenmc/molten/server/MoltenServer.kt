@@ -158,7 +158,10 @@ class MoltenServer(
                 // TODO: Add more intent handlers as they are implemented
             }
             
-            val regionIntentProcessor = DefaultRegionIntentProcessor(handlerRegistry, commandBuffer)
+            // TODO: Provide ComponentReader when entity storage is available
+            val componentReader: io.github.moltenmc.molten.server.network.intent.ComponentReader? = null
+            
+            val regionIntentProcessor = DefaultRegionIntentProcessor(handlerRegistry, commandBuffer, componentReader)
             
             return create(
                 configuration = configuration,

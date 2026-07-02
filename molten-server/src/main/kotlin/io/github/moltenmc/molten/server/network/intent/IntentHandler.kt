@@ -1,5 +1,6 @@
 package io.github.moltenmc.molten.server.network.intent
 
+import io.github.moltenmc.molten.common.ecs.EntityId
 import io.github.moltenmc.molten.common.network.intent.ServerIntent
 
 /**
@@ -15,5 +16,13 @@ fun interface IntentHandler<T : ServerIntent> {
  */
 data class IntentHandlerContext(
     val commandBuffer: io.github.moltenmc.molten.common.ecs.command.EcsCommandBuffer,
+    val componentReader: ComponentReader? = null,
     // TODO: Add world access, entity storage access, etc. as they become available
 )
+
+/**
+ * Interface for reading entity components during intent handling.
+ */
+interface ComponentReader {
+    fun getComponent(entityId: EntityId, componentType: Class<*>): Any?
+}
