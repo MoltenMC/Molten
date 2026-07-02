@@ -7,8 +7,11 @@ import io.github.moltenmc.molten.server.console.ServerLogger
 import io.github.moltenmc.molten.server.network.ProtocolListener
 import io.github.moltenmc.molten.server.network.ProtocolListenerFactory
 import io.github.moltenmc.molten.server.network.ServerIntentInbox
+import io.github.moltenmc.molten.server.network.intent.BlockInteractIntentHandler
 import io.github.moltenmc.molten.server.network.intent.DefaultRegionIntentProcessor
+import io.github.moltenmc.molten.server.network.intent.EntityInteractIntentHandler
 import io.github.moltenmc.molten.server.network.intent.IntentHandlerRegistry
+import io.github.moltenmc.molten.server.network.intent.InventoryActionIntentHandler
 import io.github.moltenmc.molten.server.network.intent.PlayerChatIntentHandler
 import io.github.moltenmc.molten.server.network.intent.PlayerMoveIntentHandler
 import io.github.moltenmc.molten.server.network.intent.RegionIntentInbox
@@ -157,6 +160,9 @@ class MoltenServer(
             val handlerRegistry = IntentHandlerRegistry().apply {
                 register(ServerIntent.PlayerMove::class.java, PlayerMoveIntentHandler())
                 register(ServerIntent.PlayerChat::class.java, PlayerChatIntentHandler())
+                register(ServerIntent.BlockInteract::class.java, BlockInteractIntentHandler())
+                register(ServerIntent.EntityInteract::class.java, EntityInteractIntentHandler())
+                register(ServerIntent.InventoryAction::class.java, InventoryActionIntentHandler())
                 // TODO: Add more intent handlers as they are implemented
             }
             
