@@ -10,6 +10,7 @@ import io.github.moltenmc.molten.common.network.intent.ServerIntent
  */
 class PlayerMoveIntentHandler(
     private val movementValidator: MovementValidator = DefaultMovementValidator(),
+    private val chunkViewManager: ChunkViewManager? = null,
 ) : IntentHandler<ServerIntent.PlayerMove> {
     override fun handle(intent: ServerIntent.PlayerMove, context: IntentHandlerContext) {
         // Validate movement if component reader is available
@@ -30,8 +31,13 @@ class PlayerMoveIntentHandler(
             }
         }
         
+        // Update chunk view if manager is available
+        chunkViewManager?.updateChunkView(
+            playerId = intent.sourceEntityId,
+            newPosition = Vec3d(intent.x, intent.y, intent.z),
+        )
+        
         // TODO: Check if movement crosses region boundaries and trigger migration
-        // TODO: Update chunk view distance based on new position
 
         val newTransform = TransformComponent(
             position = Vec3d(intent.x, intent.y, intent.z),

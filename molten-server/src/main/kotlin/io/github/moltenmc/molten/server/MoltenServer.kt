@@ -8,6 +8,7 @@ import io.github.moltenmc.molten.server.network.ProtocolListener
 import io.github.moltenmc.molten.server.network.ProtocolListenerFactory
 import io.github.moltenmc.molten.server.network.ServerIntentInbox
 import io.github.moltenmc.molten.server.network.intent.BlockInteractIntentHandler
+import io.github.moltenmc.molten.server.network.intent.ChunkViewManager
 import io.github.moltenmc.molten.server.network.intent.DefaultRegionIntentProcessor
 import io.github.moltenmc.molten.server.network.intent.EntityInteractIntentHandler
 import io.github.moltenmc.molten.server.network.intent.IntentHandlerRegistry
@@ -157,8 +158,12 @@ class MoltenServer(
             
             // Set up intent handler registry with handlers
             val commandBuffer = EcsCommandBuffer()
+            
+            // Set up chunk view manager for player movement
+            val chunkViewManager = ChunkViewManager()
+            
             val handlerRegistry = IntentHandlerRegistry().apply {
-                register(ServerIntent.PlayerMove::class.java, PlayerMoveIntentHandler())
+                register(ServerIntent.PlayerMove::class.java, PlayerMoveIntentHandler(chunkViewManager = chunkViewManager))
                 register(ServerIntent.PlayerChat::class.java, PlayerChatIntentHandler())
                 register(ServerIntent.BlockInteract::class.java, BlockInteractIntentHandler())
                 register(ServerIntent.EntityInteract::class.java, EntityInteractIntentHandler())
