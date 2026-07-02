@@ -1,8 +1,10 @@
 package io.github.moltenmc.molten.java.network.session
 
-import io.github.moltenmc.molten.common.network.message.OutboundMessage
 import io.github.moltenmc.molten.common.ecs.EntityId
 import io.github.moltenmc.molten.common.ecs.EntityKind
+import io.github.moltenmc.molten.common.network.IntentRouting
+import io.github.moltenmc.molten.common.network.intent.ServerIntent
+import io.github.moltenmc.molten.common.network.message.OutboundMessage
 import io.github.moltenmc.molten.common.region.RegionPos
 import io.github.moltenmc.molten.common.text.TextComponent
 import io.github.moltenmc.molten.common.world.WorldId
@@ -19,6 +21,25 @@ class JavaSessionHolderTest {
         sessionHolder.outboundQueue.enqueue(OutboundMessage.System(TextComponent("Hello")))
 
         assertEquals(1, sessionHolder.outboundQueue.size)
+    }
+
+    @Test
+    fun ownsInboundIntentQueue() {
+        val sessionHolder = JavaSessionHolder(JavaProtocolState.PLAY)
+        val entityId = EntityId.of(1, generation = 0, EntityKind.PLAYER)
+
+        sessionHolder.inboundIntentQueue.enqueue(
+            ServerIntent.PlayerChat(
+                sourceEntityId = entityId,
+                routing = IntentRouting(
+                    worldId = null,
+                    regionPos = null,
+                ),
+                message = "Hello",
+            ),
+        )
+
+        assertEquals(1, sessionHolder.inboundIntentQueue.size)
     }
 
     @Test

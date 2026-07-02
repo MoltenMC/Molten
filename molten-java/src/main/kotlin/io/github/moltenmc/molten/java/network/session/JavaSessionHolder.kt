@@ -21,4 +21,6 @@ class JavaSessionHolder(
     var currentRegion: RegionPos? = null
 
     val outboundQueue: JavaOutboundQueue = JavaOutboundQueue()
+
+    val inboundIntentQueue: JavaInboundIntentQueue = JavaInboundIntentQueue()
 }
