@@ -7,5 +7,7 @@ interface JavaNetworkListener {
 
     fun bind(host: String, port: Int)
 
+    fun tickSessions(): Int
+
     fun close()
 }

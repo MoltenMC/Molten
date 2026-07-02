@@ -78,6 +78,8 @@ class ProtocolListenerTest {
             localAddress = InetSocketAddress(host, port)
         }
 
+        override fun tickSessions(): Int = 0
+
         override fun close() {
             closeCalls++
             localAddress = null

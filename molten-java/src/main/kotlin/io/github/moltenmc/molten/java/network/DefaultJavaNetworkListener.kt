@@ -12,6 +12,7 @@ import io.github.moltenmc.molten.java.network.handler.JavaOutboundFlushHandler
 import io.github.moltenmc.molten.java.network.handler.JavaSessionTickHandler
 import io.github.moltenmc.molten.java.network.handler.JavaStatusRequestHandler
 import io.github.moltenmc.molten.java.network.session.JavaSessionHolder
+import io.github.moltenmc.molten.java.network.session.JavaSessionTickRegistry
 import io.netty5.bootstrap.ServerBootstrap
 import io.netty5.channel.Channel
 import io.netty5.channel.ChannelInitializer
@@ -28,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class DefaultJavaNetworkListener(
     private val bindTimeoutSeconds: Long = 10,
+    private val tickRegistry: JavaSessionTickRegistry = JavaSessionTickRegistry(),
 ) : JavaNetworkListener {
     private val boundRef = AtomicBoolean(false)
 
@@ -60,20 +62,7 @@ class DefaultJavaNetworkListener(
                 .childHandler(
                     object : ChannelInitializer<SocketChannel>() {
                         override fun initChannel(channel: SocketChannel) {
-                            val session = JavaSessionHolder()
-                            val outboundFlushHandler = JavaOutboundFlushHandler(session)
-                            channel.pipeline()
-                                .addLast("java-varint-frame-decoder", JavaVarIntFrameDecoder())
-                                .addLast("java-packet-decoder", JavaPacketDecoder(stateHolder = session))
-                                .addLast("java-handshake-state-handler", JavaHandshakeStateHandler(session))
-                                .addLast("java-status-request-handler", JavaStatusRequestHandler())
-                                .addLast("java-login-start-handler", JavaLoginStartHandler(session))
-                                .addLast("java-configuration-finish-handler", JavaConfigurationFinishHandler(session))
-                                .addLast("java-outbound-flush-handler", outboundFlushHandler)
-                                .addLast("java-session-tick-handler", JavaSessionTickHandler(outboundFlushHandler))
-                                .addLast("java-varint-frame-encoder", JavaVarIntFrameEncoder())
-                                .addLast("java-packet-encoder", JavaPacketEncoder(stateHolder = session))
-                                .addLast("java-network-exception-handler", JavaNetworkExceptionHandler(session))
+                            initializeChannel(channel)
                         }
                     },
                 )
@@ -90,6 +79,9 @@ class DefaultJavaNetworkListener(
             throw IllegalStateException("Failed to bind Java network listener to $host:$port.", error)
         }
     }
+
+    override fun tickSessions(): Int =
+        tickRegistry.tickAll()
 
     override fun close() {
         if (!boundRef.compareAndSet(true, false)) {
@@ -121,6 +113,34 @@ class DefaultJavaNetworkListener(
 
     private fun shutdownGroup(group: EventLoopGroup?) {
         group?.shutdownGracefully()?.awaitResult()
+    }
+
+    internal fun initializeChannel(
+        channel: Channel,
+        session: JavaSessionHolder = JavaSessionHolder(),
+    ) {
+        val outboundFlushHandler = JavaOutboundFlushHandler(session)
+        val sessionTickHandler = JavaSessionTickHandler(outboundFlushHandler)
+        channel.pipeline()
+            .addLast("java-varint-frame-decoder", JavaVarIntFrameDecoder())
+            .addLast("java-packet-decoder", JavaPacketDecoder(stateHolder = session))
+            .addLast("java-handshake-state-handler", JavaHandshakeStateHandler(session))
+            .addLast("java-status-request-handler", JavaStatusRequestHandler())
+            .addLast("java-login-start-handler", JavaLoginStartHandler(session))
+            .addLast(
+                "java-configuration-finish-handler",
+                JavaConfigurationFinishHandler(
+                    sessionHolder = session,
+                    outboundFlushHandler = outboundFlushHandler,
+                ),
+            )
+            .addLast("java-outbound-flush-handler", outboundFlushHandler)
+            .addLast("java-session-tick-handler", sessionTickHandler)
+            .addLast("java-varint-frame-encoder", JavaVarIntFrameEncoder())
+            .addLast("java-packet-encoder", JavaPacketEncoder(stateHolder = session))
+            .addLast("java-network-exception-handler", JavaNetworkExceptionHandler(session))
+
+        tickRegistry.register(sessionTickHandler, channel.pipeline().context(sessionTickHandler))
     }
 
     private fun <T> Future<T>.awaitResult(): T {
