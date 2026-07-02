@@ -6,11 +6,13 @@ import io.github.moltenmc.molten.server.console.ConsoleServerLogger
 import io.github.moltenmc.molten.server.console.ServerLogger
 import io.github.moltenmc.molten.server.network.ProtocolListener
 import io.github.moltenmc.molten.server.network.ProtocolListenerFactory
+import io.github.moltenmc.molten.server.network.ServerIntentInbox
 import io.github.moltenmc.molten.server.runtime.RuntimeDefinition
 import io.github.moltenmc.molten.server.tick.InMemoryTickMetricsObserver
 import io.github.moltenmc.molten.server.tick.ProtocolListenerTickTask
 import io.github.moltenmc.molten.server.tick.ServerTickLoop
 import io.github.moltenmc.molten.server.tick.ServerTickResult
+import io.github.moltenmc.molten.server.tick.ServerIntentDispatchTask
 import io.github.moltenmc.molten.server.tick.TickPipeline
 import io.github.moltenmc.molten.server.tick.TickTask
 import io.github.moltenmc.molten.server.tick.TickMetricsSnapshot
@@ -136,14 +138,15 @@ class MoltenServer(
             logger: ServerLogger = ConsoleServerLogger(),
         ): MoltenServer {
             val worldRuntime = WorldStorageRuntimeFactory(worldStoragePaths).create(runtimeDefinition)
+            val intentInbox = ServerIntentInbox()
             return create(
                 configuration = configuration,
                 worldChunks = worldRuntime.chunks,
-                tickTasks = tickTasks,
+                tickTasks = listOf(ServerIntentDispatchTask(intentInbox)) + tickTasks,
                 managedResources = listOf(worldRuntime),
                 logger = logger,
                 startupSummary = ServerStartupSummary.from(configuration, worldRuntime.storageKind),
-                protocolListeners = ProtocolListenerFactory(configuration).create(runtimeDefinition),
+                protocolListeners = ProtocolListenerFactory(configuration, intentInbox).create(runtimeDefinition),
             )
         }
 
