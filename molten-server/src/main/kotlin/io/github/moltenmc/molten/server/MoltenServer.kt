@@ -12,6 +12,7 @@ import io.github.moltenmc.molten.server.network.intent.ServerIntentRouter
 import io.github.moltenmc.molten.server.runtime.RuntimeDefinition
 import io.github.moltenmc.molten.server.tick.InMemoryTickMetricsObserver
 import io.github.moltenmc.molten.server.tick.ProtocolListenerTickTask
+import io.github.moltenmc.molten.server.tick.RegionIntentSimulationTask
 import io.github.moltenmc.molten.server.tick.ServerTickLoop
 import io.github.moltenmc.molten.server.tick.ServerTickResult
 import io.github.moltenmc.molten.server.tick.ServerIntentDispatchTask
@@ -148,6 +149,7 @@ class MoltenServer(
                 worldChunks = worldRuntime.chunks,
                 tickTasks = listOf(
                     ServerIntentDispatchTask(intentInbox, ServerIntentRouter(regionIntentInbox)),
+                    RegionIntentSimulationTask(regionIntentInbox),
                 ) + tickTasks,
                 managedResources = listOf(worldRuntime),
                 logger = logger,

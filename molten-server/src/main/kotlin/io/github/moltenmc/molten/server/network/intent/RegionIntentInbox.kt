@@ -27,4 +27,14 @@ class RegionIntentInbox : RegionIntentSink {
         }
         return drained
     }
+
+    fun drainAll(): List<RegionIntentBatch> =
+        queues.keys.mapNotNull { key ->
+            val intents = drain(key)
+            if (intents.isEmpty()) {
+                null
+            } else {
+                RegionIntentBatch(key, intents)
+            }
+        }
 }
