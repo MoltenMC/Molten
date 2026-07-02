@@ -10,6 +10,7 @@ import io.netty5.channel.ChannelHandlerContext
 class JavaConfigurationFinishHandler(
     private val sessionHolder: JavaSessionHolder,
     private val playStartHandler: JavaPlayStartHandler = JavaPlayStartHandler(),
+    private val outboundFlushHandler: JavaOutboundFlushHandler = JavaOutboundFlushHandler(sessionHolder),
 ) : ChannelHandlerAdapter() {
     data class ConfigurationFinishResult(
         val playPackets: List<JavaPacket>,
@@ -28,6 +29,7 @@ class JavaConfigurationFinishHandler(
                 ctx.channel().write(packet)
             }
             ctx.channel().flush()
+            outboundFlushHandler.flushQueuedMessages(ctx)
         } else {
             ctx.fireChannelRead(msg)
         }
