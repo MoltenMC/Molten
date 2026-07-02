@@ -6,6 +6,7 @@ import io.github.moltenmc.molten.java.network.codec.JavaVarIntFrameDecoder
 import io.github.moltenmc.molten.java.network.codec.JavaVarIntFrameEncoder
 import io.github.moltenmc.molten.java.network.handler.JavaConfigurationFinishHandler
 import io.github.moltenmc.molten.java.network.handler.JavaHandshakeStateHandler
+import io.github.moltenmc.molten.java.network.handler.JavaIntentQueueHandler
 import io.github.moltenmc.molten.java.network.handler.JavaLoginStartHandler
 import io.github.moltenmc.molten.java.network.handler.JavaNetworkExceptionHandler
 import io.github.moltenmc.molten.java.network.handler.JavaOutboundFlushHandler
@@ -134,6 +135,7 @@ class DefaultJavaNetworkListener(
                     outboundFlushHandler = outboundFlushHandler,
                 ),
             )
+            .addLast("java-intent-queue-handler", JavaIntentQueueHandler(session))
             .addLast("java-outbound-flush-handler", outboundFlushHandler)
             .addLast("java-session-tick-handler", sessionTickHandler)
             .addLast("java-varint-frame-encoder", JavaVarIntFrameEncoder())
